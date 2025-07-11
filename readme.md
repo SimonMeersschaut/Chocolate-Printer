@@ -44,10 +44,13 @@ Controller
 
     ![Microstepping](image.png)
 
-![A4988](docs/a4998.jpg)
 
-![calc current through A4988](image-1.png)
+### A4988
+
+![A4988](docs/a4998/a4998.jpg)
+![current formula](docs/a4998/formula_current.png)
+![step sizes](docs/a4998/step_sizes.png)
 
 ### 4. Arduino CNC Shield
 
-![arduino_cnc_shield](docs/arduino_cnc_shield.png)
+![arduino_cnc_shield](docs/arduino_cnc_shield/arduino_cnc_shield.png)
