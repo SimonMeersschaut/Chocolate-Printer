@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="com.willwinder.ugs.platform.ugscore">
+    <module_version install_time="1744651261604" last="true" origin="installer" specification_version="2.0.0.2025.04.14.17.18">
+        <file crc="1497893699" name="config/Modules/com-willwinder-ugs-platform-ugscore.xml"/>
+        <file crc="3255776997" name="modules/com-willwinder-ugs-platform-ugscore.jar"/>
+        <file crc="4201768109" name="modules/ext/com.willwinder.ugs-platform-ugscore/com-github-vatbub/mslinks.jar"/>
+    </module_version>
+</module>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><module codename="com.willwinder.ugs.platform.visualizer">
+    <module_version install_time="1744651261326" last="true" origin="installer" specification_version="2.0.0.2025.04.14.17.18">
+        <file crc="2497449639" name="config/Modules/com-willwinder-ugs-platform-visualizer.xml"/>
+        <file crc="247856034" name="modules/com-willwinder-ugs-platform-visualizer.jar"/>
+        <file crc="2818755006" name="modules/ext/com.willwinder.ugs-platform-visualizer/com-aparapi/aparapi-jni.jar"/>
+        <file crc="3863787264" name="modules/ext/com.willwinder.ugs-platform-visualizer/com-aparapi/aparapi.jar"/>
+        <file crc="2666818564" name="modules/ext/com.willwinder.ugs-platform-visualizer/com-breiler-jcsg/jcsg-core.jar"/>
+        <file crc="1291623642" name="modules/ext/com.willwinder.ugs-platform-visualizer/com-google-code-gson/gson.jar"/>
+        <file crc="996634401" name="modules/ext/com.willwinder.ugs-platform-visualizer/com-google-errorprone/error_prone_annotations.jar"/>
+        <file crc="2356733672" name="modules/ext/com.willwinder.ugs-platform-visualizer/commons-io/commons-io.jar"/>
+        <file crc="144526893" name="modules/ext/com.willwinder.ugs-platform-visualizer/javax-vecmath/vecmath.jar"/>
+        <file crc="4127129525" name="modules/ext/com.willwinder.ugs-platform-visualizer/org-apache-bcel/bcel.jar"/>
+        <file crc="537139198" name="modules/ext/com.willwinder.ugs-platform-visualizer/org-locationtech-jts/jts-core.jar"/>
+        <file crc="2738563785" name="modules/ext/com.willwinder.ugs-platform-visualizer/org-scala-lang/scala-library.jar"/>
+    </module_version>
+</module>

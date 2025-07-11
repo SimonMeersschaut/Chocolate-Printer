@@ -4,6 +4,7 @@
 
 GRBL docs: https://github.com/grbl/grbl
 
+UGS: Universal Gcode Sender platform
 
 ## Components
 
@@ -27,16 +28,25 @@ GRBL docs: https://github.com/grbl/grbl
 
 Creality CR - M4 42-34 Motor
 
-    24V DC
-    0.84A
-    Holding Torque
-    – 2.86kg.cm Typ.
+    - 24V DC
+
+    - Current: ideaal 0.9A–1.2A
+    -> if you go below this, you will hear the motor cracking.
+    fom 0.3A to 2.5A (source https://www.youtube.com/watch?v=7spK_BkMJys)
+    
+    - Holding Torque: 2.86kg.cm Typ.
 
 Controller
 
     Type: A4988
 
+    recommended current: max 1A
+
+    ![Microstepping](image.png)
+
 ![A4988](docs/a4998.jpg)
+
+![calc current through A4988](image-1.png)
 
 ### 4. Arduino CNC Shield
 
