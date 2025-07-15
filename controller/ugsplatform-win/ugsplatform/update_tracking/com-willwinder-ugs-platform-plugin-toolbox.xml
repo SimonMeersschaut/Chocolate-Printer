@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?><module codename="com.willwinder.ugs.platform.plugin.toolbox">
-    <module_version install_time="1744651262636" last="true" origin="installer" specification_version="2.0.0.2025.04.14.17.18">
-        <file crc="2946203200" name="config/Modules/com-willwinder-ugs-platform-plugin-toolbox.xml"/>
-        <file crc="1322218144" name="modules/com-willwinder-ugs-platform-plugin-toolbox.jar"/>
-        <file crc="3542709268" name="modules/ext/com.willwinder.ugs-platform-plugin-toolbox/com-google-code-gson/gson.jar"/>
-        <file crc="2111236877" name="modules/ext/com.willwinder.ugs-platform-plugin-toolbox/com-miglayout/miglayout-core.jar"/>
-        <file crc="1172287255" name="modules/ext/com.willwinder.ugs-platform-plugin-toolbox/com-miglayout/miglayout-swing.jar"/>
-    </module_version>
-</module>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?><module codename="com.willwinder.ugs.platform.plugin.filebrowser">
-    <module_version install_time="1744651262801" last="true" origin="installer" specification_version="2.0.0.2025.04.14.17.18">
-        <file crc="46420335" name="config/Modules/com-willwinder-ugs-platform-plugin-filebrowser.xml"/>
-        <file crc="4021833448" name="modules/com-willwinder-ugs-platform-plugin-filebrowser.jar"/>
-        <file crc="2111236877" name="modules/ext/com.willwinder.ugs-platform-plugin-filebrowser/com-miglayout/miglayout-core.jar"/>
-        <file crc="1172287255" name="modules/ext/com.willwinder.ugs-platform-plugin-filebrowser/com-miglayout/miglayout-swing.jar"/>
-        <file crc="167814075" name="modules/ext/com.willwinder.ugs-platform-plugin-filebrowser/org-apache-commons/commons-lang3.jar"/>
-    </module_version>
-</module>

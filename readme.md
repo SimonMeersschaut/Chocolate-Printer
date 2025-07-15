@@ -54,3 +54,13 @@ Controller
 ### 4. Arduino CNC Shield
 
 ![arduino_cnc_shield](docs/arduino_cnc_shield/arduino_cnc_shield.png)
+
+Arduino Mega CNC shield
+
+### Extra hardware
+
+moer: https://www.123-3d.nl/123-3D-Leadscrew-moer-TR8x8-i1560-t9712.html
+
+koppeling: https://www.123-3d.nl/123-3D-Flexibele-motor-koppeling-5-mm-8-mm-i342-t3045.html
+
+leadscrew: https://www.123-3d.nl/123-3D-Leadscrew-TR8x8-8-mm-30-cm-i1558-t9712.html
