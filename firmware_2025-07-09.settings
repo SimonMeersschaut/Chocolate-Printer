@@ -1,7 +1,7 @@
 {
   "name": "Exported settings",
   "createdBy": "Simon",
-  "date": "2025-07-09",
+  "date": "2025-07-16",
   "firmwareName": "GRBL 1.1h",
   "settings": [
     {
@@ -188,14 +188,14 @@
     },
     {
       "key": "$26",
-      "value": "250",
+      "value": "244",
       "units": "milliseconds",
       "description": "Sets a short delay between phases of homing cycle to let a switch debounce.",
       "shortDescription": "Homing switch debounce delay"
     },
     {
       "key": "$27",
-      "value": "1.000",
+      "value": "10.000",
       "units": "millimeters",
       "description": "Retract distance after triggering switch to disengage it. Homing will fail if switch isn\u0027t cleared.",
       "shortDescription": "Homing switch pull-off distance"
