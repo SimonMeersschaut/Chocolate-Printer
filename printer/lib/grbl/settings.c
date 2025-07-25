@@ -2,6 +2,7 @@
   settings.c - eeprom configuration handling
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -23,7 +24,7 @@
 
 settings_t settings;
 
-const __flash settings_t defaults = {\
+const __flash settings_t defaults = {
     .pulse_microseconds = DEFAULT_STEP_PULSE_MICROSECONDS,
     .stepper_idle_lock_time = DEFAULT_STEPPER_IDLE_LOCK_TIME,
     .step_invert_mask = DEFAULT_STEPPING_INVERT_MASK,
@@ -33,38 +34,64 @@ const __flash settings_t defaults = {\
     .arc_tolerance = DEFAULT_ARC_TOLERANCE,
     .rpm_max = DEFAULT_SPINDLE_RPM_MAX,
     .rpm_min = DEFAULT_SPINDLE_RPM_MIN,
+    #ifdef SEPARATE_SPINDLE_LASER_PIN
+      .laser_max = DEFAULT_LASER_MAX,
+      .laser_min = DEFAULT_LASER_MIN,
+    #endif
+    #ifdef USE_OUTPUT_PWM
+      .volts_max = DEFAULT_OUTPUT_MAX,
+      .volts_min = DEFAULT_OUTPUT_MIN,
+    #endif
     .homing_dir_mask = DEFAULT_HOMING_DIR_MASK,
     .homing_feed_rate = DEFAULT_HOMING_FEED_RATE,
     .homing_seek_rate = DEFAULT_HOMING_SEEK_RATE,
     .homing_debounce_delay = DEFAULT_HOMING_DEBOUNCE_DELAY,
     .homing_pulloff = DEFAULT_HOMING_PULLOFF,
-    .flags = (DEFAULT_REPORT_INCHES << BIT_REPORT_INCHES) | \
-             (DEFAULT_LASER_MODE << BIT_LASER_MODE) | \
-             (DEFAULT_INVERT_ST_ENABLE << BIT_INVERT_ST_ENABLE) | \
-             (DEFAULT_HARD_LIMIT_ENABLE << BIT_HARD_LIMIT_ENABLE) | \
-             (DEFAULT_HOMING_ENABLE << BIT_HOMING_ENABLE) | \
-             (DEFAULT_SOFT_LIMIT_ENABLE << BIT_SOFT_LIMIT_ENABLE) | \
-             (DEFAULT_INVERT_LIMIT_PINS << BIT_INVERT_LIMIT_PINS) | \
+    .flags = (DEFAULT_REPORT_INCHES << BIT_REPORT_INCHES) |
+             (DEFAULT_LASER_MODE << BIT_LASER_MODE) |
+             (DEFAULT_INVERT_ST_ENABLE << BIT_INVERT_ST_ENABLE) |
+             (DEFAULT_HARD_LIMIT_ENABLE << BIT_HARD_LIMIT_ENABLE) |
+             (DEFAULT_HOMING_ENABLE << BIT_HOMING_ENABLE) |
+             (DEFAULT_SOFT_LIMIT_ENABLE << BIT_SOFT_LIMIT_ENABLE) |
+             (DEFAULT_INVERT_LIMIT_PINS << BIT_INVERT_LIMIT_PINS) |
              (DEFAULT_INVERT_PROBE_PIN << BIT_INVERT_PROBE_PIN),
-    .steps_per_mm[X_AXIS] = DEFAULT_X_STEPS_PER_MM,
-    .steps_per_mm[Y_AXIS] = DEFAULT_Y_STEPS_PER_MM,
-    .steps_per_mm[Z_AXIS] = DEFAULT_Z_STEPS_PER_MM,
-    .max_rate[X_AXIS] = DEFAULT_X_MAX_RATE,
-    .max_rate[Y_AXIS] = DEFAULT_Y_MAX_RATE,
-    .max_rate[Z_AXIS] = DEFAULT_Z_MAX_RATE,
-    .acceleration[X_AXIS] = DEFAULT_X_ACCELERATION,
-    .acceleration[Y_AXIS] = DEFAULT_Y_ACCELERATION,
-    .acceleration[Z_AXIS] = DEFAULT_Z_ACCELERATION,
-    .max_travel[X_AXIS] = (-DEFAULT_X_MAX_TRAVEL),
-    .max_travel[Y_AXIS] = (-DEFAULT_Y_MAX_TRAVEL),
-    .max_travel[Z_AXIS] = (-DEFAULT_Z_MAX_TRAVEL)};
-
+    .steps_per_mm[AXIS_1] = DEFAULT_AXIS1_STEPS_PER_UNIT,
+    .steps_per_mm[AXIS_2] = DEFAULT_AXIS2_STEPS_PER_UNIT,
+    .steps_per_mm[AXIS_3] = DEFAULT_AXIS3_STEPS_PER_UNIT,
+    .max_rate[AXIS_1] = DEFAULT_AXIS1_MAX_RATE,
+    .max_rate[AXIS_2] = DEFAULT_AXIS2_MAX_RATE,
+    .max_rate[AXIS_3] = DEFAULT_AXIS3_MAX_RATE,
+    .acceleration[AXIS_1] = DEFAULT_AXIS1_ACCELERATION,
+    .acceleration[AXIS_2] = DEFAULT_AXIS2_ACCELERATION,
+    .acceleration[AXIS_3] = DEFAULT_AXIS3_ACCELERATION,
+    .max_travel[AXIS_1] = (-DEFAULT_AXIS1_MAX_TRAVEL),
+    .max_travel[AXIS_2] = (-DEFAULT_AXIS2_MAX_TRAVEL),
+    .max_travel[AXIS_3] = (-DEFAULT_AXIS3_MAX_TRAVEL),
+#if N_AXIS > 3
+    .steps_per_mm[AXIS_4] = DEFAULT_AXIS4_STEPS_PER_UNIT,
+    .max_rate[AXIS_4] = DEFAULT_AXIS4_MAX_RATE,
+    .acceleration[AXIS_4] = DEFAULT_AXIS4_ACCELERATION,
+    .max_travel[AXIS_4] = (-DEFAULT_AXIS4_MAX_TRAVEL),
+#endif
+#if N_AXIS > 4
+    .steps_per_mm[AXIS_5] = DEFAULT_AXIS5_STEPS_PER_UNIT,
+    .max_rate[AXIS_5] = DEFAULT_AXIS5_MAX_RATE,
+    .acceleration[AXIS_5] = DEFAULT_AXIS5_ACCELERATION,
+    .max_travel[AXIS_5] = (-DEFAULT_AXIS5_MAX_TRAVEL),
+#endif
+#if N_AXIS > 5
+    .steps_per_mm[AXIS_6] = DEFAULT_AXIS6_STEPS_PER_UNIT,
+    .max_rate[AXIS_6] = DEFAULT_AXIS6_MAX_RATE,
+    .acceleration[AXIS_6] = DEFAULT_AXIS6_ACCELERATION,
+    .max_travel[AXIS_6] = (-DEFAULT_AXIS6_MAX_TRAVEL),
+#endif
+};
 
 // Method to store startup lines into EEPROM
 void settings_store_startup_line(uint8_t n, char *line)
 {
   #ifdef FORCE_BUFFER_SYNC_DURING_EEPROM_WRITE
-    protocol_buffer_synchronize(); // A startup line may contain a motion and be executing. 
+    protocol_buffer_synchronize(); // A startup line may contain a motion and be executing.
   #endif
   uint32_t addr = n*(LINE_BUFFER_SIZE+1)+EEPROM_ADDR_STARTUP_BLOCK;
   memcpy_to_eeprom_with_checksum(addr,(char*)line, LINE_BUFFER_SIZE);
@@ -102,7 +129,7 @@ void write_global_settings()
 
 // Method to restore EEPROM-saved Grbl global settings back to defaults.
 void settings_restore(uint8_t restore_flag) {
-  if (restore_flag & SETTINGS_RESTORE_DEFAULTS) {    
+  if (restore_flag & SETTINGS_RESTORE_DEFAULTS) {
     settings = defaults;
     write_global_settings();
   }
@@ -287,13 +314,20 @@ uint8_t settings_store_global_setting(uint8_t parameter, float value) {
       case 30: settings.rpm_max = value; spindle_init(); break; // Re-initialize spindle rpm calibration
       case 31: settings.rpm_min = value; spindle_init(); break; // Re-initialize spindle rpm calibration
       case 32:
-        #ifdef VARIABLE_SPINDLE
-          if (int_value) { settings.flags |= BITFLAG_LASER_MODE; }
-          else { settings.flags &= ~BITFLAG_LASER_MODE; }
-        #else
-          return(STATUS_SETTING_DISABLED_LASER);
+        if (int_value) { settings.flags |= BITFLAG_LASER_MODE; }
+        else { settings.flags &= ~BITFLAG_LASER_MODE; }
+        #ifdef SEPARATE_SPINDLE_LASER_PIN
+          spindle_init(); // Re-initialize spindle / laser calibration
         #endif
         break;
+      #ifdef SEPARATE_SPINDLE_LASER_PIN
+        case 33: settings.laser_max = value; spindle_init(); break; // Re-initialize laser calibration
+        case 34: settings.laser_min = value; spindle_init(); break; // Re-initialize laser calibration
+      #endif
+      #ifdef USE_OUTPUT_PWM
+        case 35: settings.volts_max = value; output_pwm_init(); break;
+        case 36: settings.volts_min = value; output_pwm_init(); break;
+      #endif
       default:
         return(STATUS_INVALID_STATEMENT);
     }
@@ -309,32 +343,84 @@ void settings_init() {
     report_status_message(STATUS_SETTING_READ_FAIL);
     settings_restore(SETTINGS_RESTORE_ALL); // Force restore all EEPROM data.
     report_grbl_settings();
+    do {} while (is_report_grbl_settings_running()); // Wait for report settings complete
   }
+  #ifdef DEBUG
+  else
+  {
+    report_debug_string("settings_init() Ok.");
+  }
+  #endif
 }
 
 
 // Returns step pin mask according to Grbl internal axis indexing.
 uint8_t get_step_pin_mask(uint8_t axis_idx)
 {
-  if ( axis_idx == X_AXIS ) { return((1<<X_STEP_BIT)); }
-  if ( axis_idx == Y_AXIS ) { return((1<<Y_STEP_BIT)); }
-  return((1<<Z_STEP_BIT));
+  if ( axis_idx == AXIS_1 ) { return((1<<STEP_BIT(AXIS_1))); }
+  if ( axis_idx == AXIS_2 ) { return((1<<STEP_BIT(AXIS_2))); }
+  #if N_AXIS > 3
+    if ( axis_idx == AXIS_4 ) { return((1<<STEP_BIT(AXIS_4))); }
+  #endif
+  #if N_AXIS > 4
+    if ( axis_idx == AXIS_5 ) { return((1<<STEP_BIT(AXIS_5))); }
+  #endif
+  #if N_AXIS > 5
+    if ( axis_idx == AXIS_6 ) { return((1<<STEP_BIT(AXIS_6))); }
+  #endif
+  return((1<<STEP_BIT(AXIS_3)));
 }
 
 
 // Returns direction pin mask according to Grbl internal axis indexing.
 uint8_t get_direction_pin_mask(uint8_t axis_idx)
 {
-  if ( axis_idx == X_AXIS ) { return((1<<X_DIRECTION_BIT)); }
-  if ( axis_idx == Y_AXIS ) { return((1<<Y_DIRECTION_BIT)); }
-  return((1<<Z_DIRECTION_BIT));
+  if ( axis_idx == AXIS_1 ) { return((1<<DIRECTION_BIT(AXIS_1))); }
+  if ( axis_idx == AXIS_2 ) { return((1<<DIRECTION_BIT(AXIS_2))); }
+  #if N_AXIS > 3
+    if ( axis_idx == AXIS_4 ) { return((1<<DIRECTION_BIT(AXIS_4))); }
+  #endif
+  #if N_AXIS > 4
+    if ( axis_idx == AXIS_5 ) { return((1<<DIRECTION_BIT(AXIS_5))); }
+  #endif
+  #if N_AXIS > 5
+    if ( axis_idx == AXIS_6 ) { return((1<<DIRECTION_BIT(AXIS_6))); }
+  #endif
+  return((1<<DIRECTION_BIT(AXIS_3)));
 }
 
 
 // Returns limit pin mask according to Grbl internal axis indexing.
-uint8_t get_limit_pin_mask(uint8_t axis_idx)
+
+uint8_t get_min_limit_pin_mask(uint8_t axis_idx)
 {
-  if ( axis_idx == X_AXIS ) { return((1<<X_LIMIT_BIT)); }
-  if ( axis_idx == Y_AXIS ) { return((1<<Y_LIMIT_BIT)); }
-  return((1<<Z_LIMIT_BIT));
+  if ( axis_idx == AXIS_1 ) { return((1<<MIN_LIMIT_BIT(AXIS_1))); }
+  if ( axis_idx == AXIS_2 ) { return((1<<MIN_LIMIT_BIT(AXIS_2))); }
+  #if N_AXIS > 3
+    if ( axis_idx == AXIS_4 ) { return((1<<MIN_LIMIT_BIT(AXIS_4))); }
+  #endif
+  #if N_AXIS > 4
+    if ( axis_idx == AXIS_5 ) { return((1<<MIN_LIMIT_BIT(AXIS_5))); }
+  #endif
+  #if N_AXIS > 5
+    if ( axis_idx == AXIS_6 ) { return((1<<MIN_LIMIT_BIT(AXIS_6))); }
+  #endif
+  return((1<<MIN_LIMIT_BIT(AXIS_3)));
 }
+
+uint8_t get_max_limit_pin_mask(uint8_t axis_idx)
+{
+  if ( axis_idx == AXIS_1 ) { return((1<<MAX_LIMIT_BIT(AXIS_1))); }
+  if ( axis_idx == AXIS_2 ) { return((1<<MAX_LIMIT_BIT(AXIS_2))); }
+  #if N_AXIS > 3
+    if ( axis_idx == AXIS_4 ) { return((1<<MAX_LIMIT_BIT(AXIS_4))); }
+  #endif
+  #if N_AXIS > 4
+    if ( axis_idx == AXIS_5 ) { return((1<<MAX_LIMIT_BIT(AXIS_5))); }
+  #endif
+  #if N_AXIS > 5
+    if ( axis_idx == AXIS_6 ) { return((1<<MAX_LIMIT_BIT(AXIS_6))); }
+  #endif
+  return((1<<MAX_LIMIT_BIT(AXIS_3)));
+}
+

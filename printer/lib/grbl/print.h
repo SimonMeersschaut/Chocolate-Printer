@@ -2,6 +2,7 @@
   print.h - Functions for formatting output strings
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -29,6 +30,7 @@ void printPgmString(const char *s);
 
 void printInteger(long n);
 
+void print_uint16_base10(uint16_t n);
 void print_uint32_base10(uint32_t n);
 
 // Prints an uint8 variable in base 10.

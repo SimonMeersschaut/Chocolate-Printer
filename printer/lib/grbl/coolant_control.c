@@ -2,6 +2,7 @@
   coolant_control.c - coolant control methods
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2012-2016 Sungeun K. Jeon for Gnea Research LLC
 
   Grbl is free software: you can redistribute it and/or modify
@@ -23,10 +24,8 @@
 
 void coolant_init()
 {
-  COOLANT_FLOOD_DDR |= (1 << COOLANT_FLOOD_BIT); // Configure as output pin
-  #ifdef ENABLE_M7
-    COOLANT_MIST_DDR |= (1 << COOLANT_MIST_BIT);
-  #endif
+  COOLANT_FLOOD_DDR |= (1 << COOLANT_FLOOD_BIT); // Configure as output pin.
+  COOLANT_MIST_DDR |= (1 << COOLANT_MIST_BIT); // Configure as output pin.
   coolant_stop();
 }
 
@@ -42,15 +41,13 @@ uint8_t coolant_get_state()
   #endif
     cl_state |= COOLANT_STATE_FLOOD;
   }
-  #ifdef ENABLE_M7
-    #ifdef INVERT_COOLANT_MIST_PIN
-      if (bit_isfalse(COOLANT_MIST_PORT,(1 << COOLANT_MIST_BIT))) {
-    #else
-      if (bit_istrue(COOLANT_MIST_PORT,(1 << COOLANT_MIST_BIT))) {
-    #endif
-      cl_state |= COOLANT_STATE_MIST;
-    }
+  #ifdef INVERT_COOLANT_MIST_PIN
+    if (bit_isfalse(COOLANT_MIST_PORT,(1 << COOLANT_MIST_BIT))) {
+  #else
+    if (bit_istrue(COOLANT_MIST_PORT,(1 << COOLANT_MIST_BIT))) {
   #endif
+    cl_state |= COOLANT_STATE_MIST;
+  }
   return(cl_state);
 }
 
@@ -64,12 +61,10 @@ void coolant_stop()
   #else
     COOLANT_FLOOD_PORT &= ~(1 << COOLANT_FLOOD_BIT);
   #endif
-  #ifdef ENABLE_M7
-    #ifdef INVERT_COOLANT_MIST_PIN
-      COOLANT_MIST_PORT |= (1 << COOLANT_MIST_BIT);
-    #else
-      COOLANT_MIST_PORT &= ~(1 << COOLANT_MIST_BIT);
-    #endif
+  #ifdef INVERT_COOLANT_MIST_PIN
+    COOLANT_MIST_PORT |= (1 << COOLANT_MIST_BIT);
+  #else
+    COOLANT_MIST_PORT &= ~(1 << COOLANT_MIST_BIT);
   #endif
 }
 
@@ -82,36 +77,34 @@ void coolant_set_state(uint8_t mode)
 {
   if (sys.abort) { return; } // Block during abort.  
   
-	if (mode & COOLANT_FLOOD_ENABLE) {
-		#ifdef INVERT_COOLANT_FLOOD_PIN
-			COOLANT_FLOOD_PORT &= ~(1 << COOLANT_FLOOD_BIT);
-		#else
-			COOLANT_FLOOD_PORT |= (1 << COOLANT_FLOOD_BIT);
-		#endif
-	} else {
-	  #ifdef INVERT_COOLANT_FLOOD_PIN
-			COOLANT_FLOOD_PORT |= (1 << COOLANT_FLOOD_BIT);
-		#else
-			COOLANT_FLOOD_PORT &= ~(1 << COOLANT_FLOOD_BIT);
-		#endif
-	}
+  if (mode & COOLANT_FLOOD_ENABLE) {
+    #ifdef INVERT_COOLANT_FLOOD_PIN
+      COOLANT_FLOOD_PORT &= ~(1 << COOLANT_FLOOD_BIT);
+    #else
+      COOLANT_FLOOD_PORT |= (1 << COOLANT_FLOOD_BIT);
+    #endif
+  } else {
+    #ifdef INVERT_COOLANT_FLOOD_PIN
+      COOLANT_FLOOD_PORT |= (1 << COOLANT_FLOOD_BIT);
+    #else
+      COOLANT_FLOOD_PORT &= ~(1 << COOLANT_FLOOD_BIT);
+    #endif
+  }
+
+  if (mode & COOLANT_MIST_ENABLE) {
+    #ifdef INVERT_COOLANT_MIST_PIN
+      COOLANT_MIST_PORT &= ~(1 << COOLANT_MIST_BIT);
+    #else
+      COOLANT_MIST_PORT |= (1 << COOLANT_MIST_BIT);
+    #endif
+  } else {
+    #ifdef INVERT_COOLANT_MIST_PIN
+      COOLANT_MIST_PORT |= (1 << COOLANT_MIST_BIT);
+    #else
+      COOLANT_MIST_PORT &= ~(1 << COOLANT_MIST_BIT);
+    #endif
+  }
   
-	#ifdef ENABLE_M7
-		if (mode & COOLANT_MIST_ENABLE) {
-			#ifdef INVERT_COOLANT_MIST_PIN
-				COOLANT_MIST_PORT &= ~(1 << COOLANT_MIST_BIT);
-			#else
-				COOLANT_MIST_PORT |= (1 << COOLANT_MIST_BIT);
-			#endif
-		} else {
-			#ifdef INVERT_COOLANT_MIST_PIN
-				COOLANT_MIST_PORT |= (1 << COOLANT_MIST_BIT);
-			#else
-				COOLANT_MIST_PORT &= ~(1 << COOLANT_MIST_BIT);
-			#endif
-		}
-	#endif
-	
   sys.report_ovr_counter = 0; // Set to report change immediately
 }
 

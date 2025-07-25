@@ -2,6 +2,7 @@
   serial.c - Low level functions for sending and recieving bytes via the serial port
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -24,14 +25,10 @@
 
 
 #ifndef RX_BUFFER_SIZE
-  #define RX_BUFFER_SIZE 128
+  #define RX_BUFFER_SIZE 255
 #endif
 #ifndef TX_BUFFER_SIZE
-  #ifdef USE_LINE_NUMBERS
-    #define TX_BUFFER_SIZE 112
-  #else
-    #define TX_BUFFER_SIZE 104
-  #endif
+  #define TX_BUFFER_SIZE 255
 #endif
 
 #define SERIAL_NO_DATA 0xff
@@ -41,6 +38,9 @@ void serial_init();
 
 // Writes one byte to the TX serial buffer. Called by main program.
 void serial_write(uint8_t data);
+
+// Write à string to the TX serial buffer. (for debugging)
+void serial_putstring(char* StringPtr);
 
 // Fetches the first byte in the serial read buffer. Called by main program.
 uint8_t serial_read();

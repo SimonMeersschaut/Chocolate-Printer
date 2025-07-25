@@ -2,6 +2,7 @@
   print.c - Functions for formatting output strings
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -46,13 +47,13 @@ void printPgmString(const char *s)
 // 	if (n == 0) {
 // 		serial_write('0');
 // 		return;
-// 	}
-//
+// 	} 
+// 
 // 	while (n > 0) {
 // 		buf[i++] = n % base;
 // 		n /= base;
 // 	}
-//
+// 
 // 	for (; i > 0; i--)
 // 		serial_write(buf[i - 1] < 10 ?
 // 			'0' + buf[i - 1] :
@@ -91,6 +92,26 @@ void print_uint8_base2_ndigit(uint8_t n, uint8_t digits) {
 
   for (; i > 0; i--)
       serial_write('0' + buf[i - 1]);
+}
+
+
+void print_uint16_base10(uint16_t n)
+{
+  if (n == 0) {
+    serial_write('0');
+    return;
+  }
+
+  unsigned char buf[10];
+  uint8_t i = 0;
+
+  while (n > 0) {
+    buf[i++] = n % 10;
+    n /= 10;
+  }
+
+  for (; i > 0; i--)
+    serial_write('0' + buf[i-1]);
 }
 
 

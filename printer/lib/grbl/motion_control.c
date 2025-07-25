@@ -2,6 +2,7 @@
   motion_control.c - high level interface for issuing motion commands
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -85,7 +86,11 @@ void mc_line(float *target, plan_line_data_t *pl_data)
 // of each segment is configured in settings.arc_tolerance, which is defined to be the maximum normal
 // distance from segment to the circle when the end points both lie on the circle.
 void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *offset, float radius,
-  uint8_t axis_0, uint8_t axis_1, uint8_t axis_linear, uint8_t is_clockwise_arc)
+  uint8_t axis_0, uint8_t axis_1, uint8_t axis_linear, uint8_t axis_0_mask, uint8_t axis_1_mask, uint8_t axis_linear_mask,
+  uint8_t axis_a, uint8_t axis_b, uint8_t axis_c, uint8_t axis_a_mask, uint8_t axis_b_mask, uint8_t axis_c_mask,
+  uint8_t axis_u, uint8_t axis_v, uint8_t axis_w, uint8_t axis_u_mask, uint8_t axis_v_mask, uint8_t axis_w_mask,
+  uint8_t axis_d, uint8_t axis_e, uint8_t axis_h, uint8_t axis_d_mask, uint8_t axis_e_mask, uint8_t axis_h_mask,
+  uint8_t is_clockwise_arc)
 {
   float center_axis0 = position[axis_0] + offset[axis_0];
   float center_axis1 = position[axis_1] + offset[axis_1];
@@ -93,6 +98,9 @@ void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *of
   float r_axis1 = -offset[axis_1];
   float rt_axis0 = target[axis_0] - center_axis0;
   float rt_axis1 = target[axis_1] - center_axis1;
+  float a_per_segment, b_per_segment, c_per_segment;
+  float u_per_segment, v_per_segment, w_per_segment;
+  float d_per_segment, e_per_segment, h_per_segment;
 
   // CCW angle between position and target from circle center. Only one atan2() trig computation required.
   float angular_travel = atan2(r_axis0*rt_axis1-r_axis1*rt_axis0, r_axis0*rt_axis0+r_axis1*rt_axis1);
@@ -113,13 +121,22 @@ void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *of
     // Multiply inverse feed_rate to compensate for the fact that this movement is approximated
     // by a number of discrete segments. The inverse feed_rate should be correct for the sum of
     // all segments.
-    if (pl_data->condition & PL_COND_FLAG_INVERSE_TIME) { 
-      pl_data->feed_rate *= segments; 
+    if (pl_data->condition & PL_COND_FLAG_INVERSE_TIME) {
+      pl_data->feed_rate *= segments;
       bit_false(pl_data->condition,PL_COND_FLAG_INVERSE_TIME); // Force as feed absolute mode over arc segments.
     }
-    
+
     float theta_per_segment = angular_travel/segments;
     float linear_per_segment = (target[axis_linear] - position[axis_linear])/segments;
+    if ( axis_a_mask ) a_per_segment = (target[axis_a] - position[axis_a])/segments; else a_per_segment = 0;
+    if ( axis_b_mask ) b_per_segment = (target[axis_b] - position[axis_b])/segments; else b_per_segment = 0;
+    if ( axis_c_mask ) c_per_segment = (target[axis_c] - position[axis_c])/segments; else c_per_segment = 0;
+    if ( axis_u_mask ) u_per_segment = (target[axis_u] - position[axis_u])/segments; else u_per_segment = 0;
+    if ( axis_v_mask ) v_per_segment = (target[axis_v] - position[axis_v])/segments; else v_per_segment = 0;
+    if ( axis_w_mask ) w_per_segment = (target[axis_w] - position[axis_w])/segments; else w_per_segment = 0;
+    if ( axis_d_mask ) d_per_segment = (target[axis_d] - position[axis_d])/segments; else d_per_segment = 0;
+    if ( axis_e_mask ) e_per_segment = (target[axis_e] - position[axis_e])/segments; else e_per_segment = 0;
+    if ( axis_h_mask ) h_per_segment = (target[axis_h] - position[axis_h])/segments; else h_per_segment = 0;
 
     /* Vector rotation by transformation matrix: r is the original vector, r_T is the rotated vector,
        and phi is the angle of rotation. Solution approach by Jens Geisler.
@@ -176,9 +193,184 @@ void mc_arc(float *target, plan_line_data_t *pl_data, float *position, float *of
       }
 
       // Update arc_target location
+      /*
       position[axis_0] = center_axis0 + r_axis0;
       position[axis_1] = center_axis1 + r_axis1;
       position[axis_linear] += linear_per_segment;
+      * */
+      if (bit_istrue((1<<AXIS_1), axis_0_mask)) {position[AXIS_1] = center_axis0 + r_axis0;}
+      if (bit_istrue((1<<AXIS_2), axis_0_mask)) {position[AXIS_2] = center_axis0 + r_axis0;}
+      if (bit_istrue((1<<AXIS_3), axis_0_mask)) {position[AXIS_3] = center_axis0 + r_axis0;}
+      #if N_AXIS > 3
+        if (bit_istrue((1<<AXIS_4), axis_0_mask)) {position[AXIS_4] = center_axis0 + r_axis0;}
+      #endif
+      #if N_AXIS > 4
+        if (bit_istrue((1<<AXIS_5), axis_0_mask)) {position[AXIS_5] = center_axis0 + r_axis0;}
+      #endif
+      #if N_AXIS > 5
+        if (bit_istrue((1<<AXIS_6), axis_0_mask)) {position[AXIS_6] = center_axis0 + r_axis0;}
+      #endif
+
+      if (bit_istrue((1<<AXIS_1), axis_1_mask)) {position[AXIS_1] = center_axis1 + r_axis1;}
+      if (bit_istrue((1<<AXIS_2), axis_1_mask)) {position[AXIS_2] = center_axis1 + r_axis1;}
+      if (bit_istrue((1<<AXIS_3), axis_1_mask)) {position[AXIS_3] = center_axis1 + r_axis1;}
+      #if N_AXIS > 3
+        if (bit_istrue((1<<AXIS_4), axis_1_mask)) {position[AXIS_4] = center_axis1 + r_axis1;}
+      #endif
+      #if N_AXIS > 4
+        if (bit_istrue((1<<AXIS_5), axis_1_mask)) {position[AXIS_5] = center_axis1 + r_axis1;}
+      #endif
+      #if N_AXIS > 5
+        if (bit_istrue((1<<AXIS_6), axis_1_mask)) {position[AXIS_6] = center_axis1 + r_axis1;}
+      #endif
+
+      if (bit_istrue((1<<AXIS_1), axis_linear_mask)) {position[AXIS_1] += linear_per_segment;}
+      if (bit_istrue((1<<AXIS_2), axis_linear_mask)) {position[AXIS_2] += linear_per_segment;}
+      if (bit_istrue((1<<AXIS_3), axis_linear_mask)) {position[AXIS_3] += linear_per_segment;}
+      #if N_AXIS > 3
+        if (bit_istrue((1<<AXIS_4), axis_linear_mask)) {position[AXIS_4] += linear_per_segment;}
+      #endif
+      #if N_AXIS > 4
+        if (bit_istrue((1<<AXIS_5), axis_linear_mask)) {position[AXIS_5] += linear_per_segment;}
+      #endif
+      #if N_AXIS > 5
+        if (bit_istrue((1<<AXIS_6), axis_linear_mask)) {position[AXIS_6] += linear_per_segment;}
+      #endif
+
+      if ( axis_a_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_a_mask)) {position[AXIS_1] += a_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_a_mask)) {position[AXIS_2] += a_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_a_mask)) {position[AXIS_3] += a_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_a_mask)) {position[AXIS_4] += a_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_a_mask)) {position[AXIS_5] += a_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_a_mask)) {position[AXIS_6] += a_per_segment;}
+        #endif
+      }
+
+      if ( axis_b_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_b_mask)) {position[AXIS_1] += b_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_b_mask)) {position[AXIS_2] += b_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_b_mask)) {position[AXIS_3] += b_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_b_mask)) {position[AXIS_4] += b_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_b_mask)) {position[AXIS_5] += b_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_b_mask)) {position[AXIS_6] += b_per_segment;}
+        #endif
+      }
+
+      if ( axis_c_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_c_mask)) {position[AXIS_1] += c_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_c_mask)) {position[AXIS_2] += c_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_c_mask)) {position[AXIS_3] += c_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_c_mask)) {position[AXIS_4] += c_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_c_mask)) {position[AXIS_5] += c_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_c_mask)) {position[AXIS_6] += c_per_segment;}
+        #endif
+      }
+
+      if ( axis_u_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_u_mask)) {position[AXIS_1] += u_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_u_mask)) {position[AXIS_2] += u_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_u_mask)) {position[AXIS_3] += u_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_u_mask)) {position[AXIS_4] += u_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_u_mask)) {position[AXIS_5] += u_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_u_mask)) {position[AXIS_6] += u_per_segment;}
+        #endif
+      }
+
+      if ( axis_v_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_v_mask)) {position[AXIS_1] += v_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_v_mask)) {position[AXIS_2] += v_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_v_mask)) {position[AXIS_3] += v_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_v_mask)) {position[AXIS_4] += v_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_v_mask)) {position[AXIS_5] += v_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_v_mask)) {position[AXIS_6] += v_per_segment;}
+        #endif
+      }
+
+      if ( axis_w_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_w_mask)) {position[AXIS_1] += w_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_w_mask)) {position[AXIS_2] += w_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_w_mask)) {position[AXIS_3] += w_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_w_mask)) {position[AXIS_4] += w_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_w_mask)) {position[AXIS_5] += w_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_w_mask)) {position[AXIS_6] += w_per_segment;}
+        #endif
+      }
+
+      if ( axis_d_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_d_mask)) {position[AXIS_1] += d_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_d_mask)) {position[AXIS_2] += d_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_d_mask)) {position[AXIS_3] += d_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_d_mask)) {position[AXIS_4] += d_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_d_mask)) {position[AXIS_5] += d_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_d_mask)) {position[AXIS_6] += d_per_segment;}
+        #endif
+      }
+
+      if ( axis_e_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_e_mask)) {position[AXIS_1] += e_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_e_mask)) {position[AXIS_2] += e_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_e_mask)) {position[AXIS_3] += e_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_e_mask)) {position[AXIS_4] += e_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_e_mask)) {position[AXIS_5] += e_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_e_mask)) {position[AXIS_6] += e_per_segment;}
+        #endif
+      }
+
+      if ( axis_h_mask ) {
+        if (bit_istrue((1<<AXIS_1), axis_h_mask)) {position[AXIS_1] += h_per_segment;}
+        if (bit_istrue((1<<AXIS_2), axis_h_mask)) {position[AXIS_2] += h_per_segment;}
+        if (bit_istrue((1<<AXIS_3), axis_h_mask)) {position[AXIS_3] += h_per_segment;}
+        #if N_AXIS > 3
+          if (bit_istrue((1<<AXIS_4), axis_h_mask)) {position[AXIS_4] += h_per_segment;}
+        #endif
+        #if N_AXIS > 4
+          if (bit_istrue((1<<AXIS_5), axis_h_mask)) {position[AXIS_5] += h_per_segment;}
+        #endif
+        #if N_AXIS > 5
+          if (bit_istrue((1<<AXIS_6), axis_h_mask)) {position[AXIS_6] += h_per_segment;}
+        #endif
+      }
 
       mc_line(position, pl_data);
 
@@ -216,11 +408,9 @@ void mc_homing_cycle(uint8_t cycle_mask)
     }
   #endif
 
-  limits_disable(); // Disable hard limits pin change register for cycle duration
-
   // -------------------------------------------------------------------------------------
   // Perform homing routine. NOTE: Special motion case. Only system reset works.
-  
+
   #ifdef HOMING_SINGLE_AXIS_COMMANDS
     if (cycle_mask) { limits_go_home(cycle_mask); } // Perform homing cycle based on mask.
     else
@@ -233,6 +423,17 @@ void mc_homing_cycle(uint8_t cycle_mask)
     #endif
     #ifdef HOMING_CYCLE_2
       limits_go_home(HOMING_CYCLE_2);  // Homing cycle 2
+    #endif
+    #if N_AXIS > 3
+      #ifdef HOMING_CYCLE_3
+        limits_go_home(HOMING_CYCLE_3);  // Homing cycle 3
+      #endif
+      #ifdef HOMING_CYCLE_4
+        limits_go_home(HOMING_CYCLE_4);  // Homing cycle 4
+      #endif
+      #ifdef HOMING_CYCLE_5
+        limits_go_home(HOMING_CYCLE_5);  // Homing cycle 5
+      #endif
     #endif
   }
 
@@ -304,6 +505,8 @@ uint8_t mc_probe_cycle(float *target, plan_line_data_t *pl_data, uint8_t parser_
   protocol_execute_realtime();   // Check and execute run-time commands
 
   // Reset the stepper and planner buffers to remove the remainder of the probe motion.
+  sys.step_control = STEP_CONTROL_NORMAL_OP; // Restore step control to normal operation
+                                             // fix grbl-Mega-5X's issue #214
   st_reset(); // Reset step segment buffer.
   plan_reset(); // Reset planner buffer. Zero planner positions. Ensure probing motion is cleared.
   plan_sync_position(); // Sync planner position to current machine position.
@@ -378,8 +581,8 @@ void mc_reset()
     // the steppers enabled by avoiding the go_idle call altogether, unless the motion state is
     // violated, by which, all bets are off.
     if ((sys.state & (STATE_CYCLE | STATE_HOMING | STATE_JOG)) ||
-    		(sys.step_control & (STEP_CONTROL_EXECUTE_HOLD | STEP_CONTROL_EXECUTE_SYS_MOTION))) {
-      if (sys.state == STATE_HOMING) { 
+        (sys.step_control & (STEP_CONTROL_EXECUTE_HOLD | STEP_CONTROL_EXECUTE_SYS_MOTION))) {
+      if (sys.state == STATE_HOMING) {
         if (!sys_rt_exec_alarm) {system_set_exec_alarm(EXEC_ALARM_HOMING_FAIL_RESET); }
       } else { system_set_exec_alarm(EXEC_ALARM_ABORT_CYCLE); }
       st_go_idle(); // Force kill steppers. Position has likely been lost.

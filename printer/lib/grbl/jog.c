@@ -2,6 +2,7 @@
   jog.h - Jogging methods
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2016 Sungeun K. Jeon for Gnea Research LLC
 
   Grbl is free software: you can redistribute it and/or modify
@@ -28,9 +29,7 @@ uint8_t jog_execute(plan_line_data_t *pl_data, parser_block_t *gc_block)
   // NOTE: Spindle and coolant are allowed to fully function with overrides during a jog.
   pl_data->feed_rate = gc_block->values.f;
   pl_data->condition |= PL_COND_FLAG_NO_FEED_OVERRIDE;
-  #ifdef USE_LINE_NUMBERS
-    pl_data->line_number = gc_block->values.n;
-  #endif
+  pl_data->line_number = gc_block->values.n;
 
   if (bit_istrue(settings.flags,BITFLAG_SOFT_LIMIT_ENABLE)) {
     if (system_check_travel_limits(gc_block->values.xyz)) { return(STATUS_TRAVEL_EXCEEDED); }

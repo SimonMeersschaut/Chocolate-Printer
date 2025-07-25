@@ -2,6 +2,7 @@
   nuts_bolts.h - Header file for shared definitions, variables, and functions
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -27,18 +28,11 @@
 
 #define SOME_LARGE_VALUE 1.0E+38
 
-// Axis array index values. Must start with 0 and be continuous.
-#define N_AXIS 3 // Number of axes
-#define X_AXIS 0 // Axis indexing value.
-#define Y_AXIS 1
-#define Z_AXIS 2
-// #define A_AXIS 3
-
 // CoreXY motor assignments. DO NOT ALTER.
 // NOTE: If the A and B motor axis bindings are changed, this effects the CoreXY equations.
 #ifdef COREXY
- #define A_MOTOR X_AXIS // Must be X_AXIS
- #define B_MOTOR Y_AXIS // Must be Y_AXIS
+ #define A_MOTOR AXIS_1 // Must be AXIS_1 (X)
+ #define B_MOTOR AXIS_2 // Must be AXIS_2 (Y)
 #endif
 
 // Conversions
@@ -59,6 +53,7 @@
 
 // Bit field and masking macros
 #define bit(n) (1 << n)
+#define dwbit(n) ((uint32_t)1 << n)
 #define bit_true(x,mask) (x) |= (mask)
 #define bit_false(x,mask) (x) &= ~(mask)
 #define bit_istrue(x,mask) ((x & mask) != 0)

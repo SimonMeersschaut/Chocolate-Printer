@@ -2,6 +2,7 @@
   settings.h - eeprom configuration handling
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -24,6 +25,9 @@
 
 #include "grbl.h"
 
+#ifndef EEPROM_LINE_SIZE
+  #define EEPROM_LINE_SIZE 80
+#endif
 
 // Version of the EEPROM data. Will be used to migrate existing data from older versions of Grbl
 // when firmware is upgraded. Always stored in byte 0 of eeprom
@@ -62,9 +66,6 @@
 #endif
 
 // Define EEPROM memory address location values for Grbl settings and parameters
-// NOTE: The Atmega328p has 1KB EEPROM. The upper half is reserved for parameters and
-// the startup script. The lower half contains the global settings and space for future
-// developments.
 #define EEPROM_ADDR_GLOBAL         1U
 #define EEPROM_ADDR_PARAMETERS     512U
 #define EEPROM_ADDR_STARTUP_BLOCK  768U
@@ -86,7 +87,7 @@
 // Global persistent settings (Stored from byte EEPROM_ADDR_GLOBAL onwards)
 typedef struct {
   // Axis settings
-  float steps_per_mm[N_AXIS];
+  float steps_per_mm[N_AXIS]; // Steps per units => steps_per_degre for rotationals axis (AXIS_4 and AXIS_5)
   float max_rate[N_AXIS];
   float acceleration[N_AXIS];
   float max_travel[N_AXIS];
@@ -102,6 +103,14 @@ typedef struct {
 
   float rpm_max;
   float rpm_min;
+  #ifdef SEPARATE_SPINDLE_LASER_PIN
+    float laser_max;
+    float laser_min;
+  #endif
+  #ifdef USE_OUTPUT_PWM
+    float volts_max;
+    float volts_min;
+  #endif
 
   uint8_t flags;  // Contains default boolean settings
 

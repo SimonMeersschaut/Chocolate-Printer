@@ -2,6 +2,7 @@
   serial.c - Low level functions for sending and recieving bytes via the serial port
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -24,8 +25,8 @@
 #define RX_RING_BUFFER (RX_BUFFER_SIZE+1)
 #define TX_RING_BUFFER (TX_BUFFER_SIZE+1)
 
-uint8_t serial_rx_buffer[RX_RING_BUFFER];
-uint8_t serial_rx_buffer_head = 0;
+volatile uint8_t serial_rx_buffer[RX_RING_BUFFER];
+volatile uint8_t serial_rx_buffer_head = 0;
 volatile uint8_t serial_rx_buffer_tail = 0;
 
 uint8_t serial_tx_buffer[TX_RING_BUFFER];
@@ -148,7 +149,7 @@ ISR(SERIAL_RX)
   // Pick off realtime command characters directly from the serial stream. These characters are
   // not passed into the main buffer, but these set system state flag bits for realtime execution.
   switch (data) {
-    case CMD_RESET:         mc_reset(); break; // Call motion control reset routine.
+    case CMD_RESET:         mc_reset(); break;     // Call motion control reset routine (soft reset).
     case CMD_STATUS_REPORT: system_set_exec_state_flag(EXEC_STATUS_REPORT); break; // Set as true
     case CMD_CYCLE_START:   system_set_exec_state_flag(EXEC_CYCLE_START); break; // Set as true
     case CMD_FEED_HOLD:     system_set_exec_state_flag(EXEC_FEED_HOLD); break; // Set as true
@@ -156,11 +157,12 @@ ISR(SERIAL_RX)
       if (data > 0x7F) { // Real-time control characters are extended ACSII only.
         switch(data) {
           case CMD_SAFETY_DOOR:   system_set_exec_state_flag(EXEC_SAFETY_DOOR); break; // Set as true
-          case CMD_JOG_CANCEL:   
+          case CMD_JOG_CANCEL:
             if (sys.state & STATE_JOG) { // Block all other states from invoking motion cancel.
-              system_set_exec_state_flag(EXEC_MOTION_CANCEL); 
+              system_set_exec_state_flag(EXEC_MOTION_CANCEL);
+              serial_reset_read_buffer(); // Vide un reste éventuel de données dans le buffer
             }
-            break; 
+            break;
           #ifdef DEBUG
             case CMD_DEBUG_REPORT: {uint8_t sreg = SREG; cli(); bit_true(sys_rt_exec_debug,EXEC_DEBUG_REPORT); SREG = sreg;} break;
           #endif
@@ -179,9 +181,7 @@ ISR(SERIAL_RX)
           case CMD_SPINDLE_OVR_FINE_MINUS: system_set_exec_accessory_override_flag(EXEC_SPINDLE_OVR_FINE_MINUS); break;
           case CMD_SPINDLE_OVR_STOP: system_set_exec_accessory_override_flag(EXEC_SPINDLE_OVR_STOP); break;
           case CMD_COOLANT_FLOOD_OVR_TOGGLE: system_set_exec_accessory_override_flag(EXEC_COOLANT_FLOOD_OVR_TOGGLE); break;
-          #ifdef ENABLE_M7
-            case CMD_COOLANT_MIST_OVR_TOGGLE: system_set_exec_accessory_override_flag(EXEC_COOLANT_MIST_OVR_TOGGLE); break;
-          #endif
+          case CMD_COOLANT_MIST_OVR_TOGGLE: system_set_exec_accessory_override_flag(EXEC_COOLANT_MIST_OVR_TOGGLE); break;
         }
         // Throw away any unfound extended-ASCII character by not passing it to the serial buffer.
       } else { // Write character to buffer
@@ -192,6 +192,9 @@ ISR(SERIAL_RX)
         if (next_head != serial_rx_buffer_tail) {
           serial_rx_buffer[serial_rx_buffer_head] = data;
           serial_rx_buffer_head = next_head;
+        } else {
+          // Indicate serial buffer overflow critical event.
+          system_set_exec_alarm(EXEC_ALARM_SERIAL_RX_OVERFLOW);
         }
       }
   }
@@ -201,4 +204,15 @@ ISR(SERIAL_RX)
 void serial_reset_read_buffer()
 {
   serial_rx_buffer_tail = serial_rx_buffer_head;
+}
+
+
+void serial_putstring(char* StringPtr)
+{
+  int i;
+  int len = strlen(StringPtr);
+  for(i=0; i<len; i++)
+  {
+    serial_write(StringPtr[i]);
+  }
 }

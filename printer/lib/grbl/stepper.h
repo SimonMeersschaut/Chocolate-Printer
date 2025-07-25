@@ -2,6 +2,7 @@
   stepper.h - stepper motor driver: executes motion plans of planner.c using the stepper motors
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -23,7 +24,7 @@
 #define stepper_h
 
 #ifndef SEGMENT_BUFFER_SIZE
-  #define SEGMENT_BUFFER_SIZE 6
+  #define SEGMENT_BUFFER_SIZE 10
 #endif
 
 // Initialize and setup the stepper motor subsystem

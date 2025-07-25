@@ -2,6 +2,7 @@
   system.c - Handles system level commands and real-time processes
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2014-2016 Sungeun K. Jeon for Gnea Research LLC
 
   Grbl is free software: you can redistribute it and/or modify
@@ -40,18 +41,15 @@ void system_init()
 uint8_t system_control_get_state()
 {
   uint8_t control_state = 0;
-  uint8_t pin = (CONTROL_PIN & CONTROL_MASK) ^ CONTROL_MASK;
+  uint8_t pin = (CONTROL_PIN & CONTROL_MASK);
   #ifdef INVERT_CONTROL_PIN_MASK
     pin ^= INVERT_CONTROL_PIN_MASK;
   #endif
   if (pin) {
-    #ifdef ENABLE_SAFETY_DOOR_INPUT_PIN
-      if (bit_istrue(pin,(1<<CONTROL_SAFETY_DOOR_BIT))) { control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR; }
-    #else
-      if (bit_istrue(pin,(1<<CONTROL_FEED_HOLD_BIT))) { control_state |= CONTROL_PIN_INDEX_FEED_HOLD; }
-    #endif
-    if (bit_istrue(pin,(1<<CONTROL_RESET_BIT))) { control_state |= CONTROL_PIN_INDEX_RESET; }
-    if (bit_istrue(pin,(1<<CONTROL_CYCLE_START_BIT))) { control_state |= CONTROL_PIN_INDEX_CYCLE_START; }
+    if (bit_isfalse(pin,(1<<CONTROL_SAFETY_DOOR_BIT))) { control_state |= CONTROL_PIN_INDEX_SAFETY_DOOR; }
+    if (bit_isfalse(pin,(1<<CONTROL_RESET_BIT))) { control_state |= CONTROL_PIN_INDEX_RESET; }
+    if (bit_isfalse(pin,(1<<CONTROL_FEED_HOLD_BIT))) { control_state |= CONTROL_PIN_INDEX_FEED_HOLD; }
+    if (bit_isfalse(pin,(1<<CONTROL_CYCLE_START_BIT))) { control_state |= CONTROL_PIN_INDEX_CYCLE_START; }
   }
   return(control_state);
 }
@@ -67,17 +65,12 @@ ISR(CONTROL_INT_vect)
   if (pin) {
     if (bit_istrue(pin,CONTROL_PIN_INDEX_RESET)) {
       mc_reset();
-    }
-    if (bit_istrue(pin,CONTROL_PIN_INDEX_CYCLE_START)) {
+    } else if (bit_istrue(pin,CONTROL_PIN_INDEX_CYCLE_START)) {
       bit_true(sys_rt_exec_state, EXEC_CYCLE_START);
-    }
-    #ifndef ENABLE_SAFETY_DOOR_INPUT_PIN
-      if (bit_istrue(pin,CONTROL_PIN_INDEX_FEED_HOLD)) {
-        bit_true(sys_rt_exec_state, EXEC_FEED_HOLD);
-    #else
-      if (bit_istrue(pin,CONTROL_PIN_INDEX_SAFETY_DOOR)) {
-        bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
-    #endif
+    } else if (bit_istrue(pin,CONTROL_PIN_INDEX_FEED_HOLD)) {
+      bit_true(sys_rt_exec_state, EXEC_FEED_HOLD);
+    } else if (bit_istrue(pin,CONTROL_PIN_INDEX_SAFETY_DOOR)) {
+      bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
     }
   }
 }
@@ -86,11 +79,7 @@ ISR(CONTROL_INT_vect)
 // Returns if safety door is ajar(T) or closed(F), based on pin state.
 uint8_t system_check_safety_door_ajar()
 {
-  #ifdef ENABLE_SAFETY_DOOR_INPUT_PIN
     return(system_control_get_state() & CONTROL_PIN_INDEX_SAFETY_DOOR);
-  #else
-    return(false); // Input pin not enabled, so just return that it's closed.
-  #endif
 }
 
 
@@ -133,7 +122,7 @@ uint8_t system_execute_line(char *line)
       if(line[2] != '=') { return(STATUS_INVALID_STATEMENT); }
       return(gc_execute_line(line)); // NOTE: $J= is ignored inside g-code parser and used to detect jog motions.
       break;
-    case '$': case 'G': case 'C': case 'X':
+    case '$': case 'G': case 'C': case 'X': case 'D':
       if ( line[2] != 0 ) { return(STATUS_INVALID_STATEMENT); }
       switch( line[1] ) {
         case '$' : // Prints Grbl settings
@@ -166,6 +155,15 @@ uint8_t system_execute_line(char *line)
             // Don't run startup script. Prevents stored moves in startup from causing accidents.
           } // Otherwise, no effect.
           break;
+        case 'D' : // Show digital input / output status
+          if ( line[2] != 0 ) {
+            return(STATUS_INVALID_STATEMENT);
+          }
+          else {
+            uint8_t dg_state = digital_get_state();
+            report_digital_status(dg_state);
+          }
+          break;
       }
       break;
     default :
@@ -185,12 +183,75 @@ uint8_t system_execute_line(char *line)
           #ifdef HOMING_SINGLE_AXIS_COMMANDS
             } else if (line[3] == 0) {
               switch (line[2]) {
-                case 'X': mc_homing_cycle(HOMING_CYCLE_X); break;
-                case 'Y': mc_homing_cycle(HOMING_CYCLE_Y); break;
-                case 'Z': mc_homing_cycle(HOMING_CYCLE_Z); break;
+                case 'X': mc_homing_cycle(axis_X_mask); break;
+                case 'Y': mc_homing_cycle(axis_Y_mask); break;
+                case 'Z': mc_homing_cycle(axis_Z_mask); break;
+                case 'A':
+                  if (axis_A_mask != 0) {
+                    mc_homing_cycle(axis_A_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
+                case 'B':
+                  if (axis_B_mask != 0) {
+                    mc_homing_cycle(axis_B_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
+                case 'C':
+                  if (axis_C_mask != 0) {
+                    mc_homing_cycle(axis_C_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
+                case 'U':
+                  if (axis_U_mask != 0) {
+                    mc_homing_cycle(axis_U_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
+                case 'V':
+                  if (axis_V_mask != 0) {
+                    mc_homing_cycle(axis_V_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
+                case 'W':
+                  if (axis_W_mask != 0) {
+                    mc_homing_cycle(axis_W_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
+                case 'D':
+                  if (axis_D_mask != 0) {
+                    mc_homing_cycle(axis_D_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
+                case 'E':
+                  if (axis_E_mask != 0) {
+                    mc_homing_cycle(axis_E_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
+                case 'H':
+                  if (axis_H_mask != 0) {
+                    mc_homing_cycle(axis_H_mask);
+                  } else {
+                    return(STATUS_INVALID_STATEMENT);
+                  }
+                  break;
                 default: return(STATUS_INVALID_STATEMENT);
               }
-          #endif
+          #endif // HOMING_SINGLE_AXIS_COMMANDS
           } else { return(STATUS_INVALID_STATEMENT); }
           if (!sys.abort) {  // Execute startup scripts after successful homing.
             sys.state = STATE_IDLE; // Set to IDLE when complete.
@@ -258,6 +319,7 @@ uint8_t system_execute_line(char *line)
             do {
               line[char_counter-helper_var] = line[char_counter];
             } while (line[char_counter++] != 0);
+            if (char_counter > EEPROM_LINE_SIZE) { return(STATUS_LINE_LENGTH_EXCEEDED); }
             // Execute gcode block to ensure block is valid.
             helper_var = gc_execute_line(line); // Set helper_var to returned status code.
             if (helper_var) { return(helper_var); }
@@ -293,9 +355,9 @@ float system_convert_axis_steps_to_mpos(int32_t *steps, uint8_t idx)
 {
   float pos;
   #ifdef COREXY
-    if (idx==X_AXIS) {
+    if (idx==AXIS_1) {
       pos = (float)system_convert_corexy_to_x_axis_steps(steps) / settings.steps_per_mm[idx];
-    } else if (idx==Y_AXIS) {
+    } else if (idx==AXIS_2) {
       pos = (float)system_convert_corexy_to_y_axis_steps(steps) / settings.steps_per_mm[idx];
     } else {
       pos = steps[idx]/settings.steps_per_mm[idx];
@@ -335,18 +397,21 @@ uint8_t system_check_travel_limits(float *target)
 {
   uint8_t idx;
   for (idx=0; idx<N_AXIS; idx++) {
-    #ifdef HOMING_FORCE_SET_ORIGIN
-      // When homing forced set origin is enabled, soft limits checks need to account for directionality.
-      // NOTE: max_travel is stored as negative
-      if (bit_istrue(settings.homing_dir_mask,bit(idx))) {
-        if (target[idx] < 0 || target[idx] > -settings.max_travel[idx]) { return(true); }
-      } else {
+    // Ignore soft limit if AXIS_MAX_TRAVEL == 0 (parameter $130 to $135)
+    if (settings.max_travel[idx] != 0) {
+      #ifdef HOMING_FORCE_SET_ORIGIN
+        // When homing forced set origin is enabled, soft limits checks need to account for directionality.
+        // NOTE: max_travel is stored as negative
+        if (bit_istrue(settings.homing_dir_mask,bit(idx))) {
+          if (target[idx] < 0 || target[idx] > -settings.max_travel[idx]) { return(true); }
+        } else {
+          if (target[idx] > 0 || target[idx] < settings.max_travel[idx]) { return(true); }
+        }
+      #else
+        // NOTE: max_travel is stored as negative
         if (target[idx] > 0 || target[idx] < settings.max_travel[idx]) { return(true); }
-      }
-    #else
-      // NOTE: max_travel is stored as negative
-      if (target[idx] > 0 || target[idx] < settings.max_travel[idx]) { return(true); }
-    #endif
+      #endif
+    }
   }
   return(false);
 }

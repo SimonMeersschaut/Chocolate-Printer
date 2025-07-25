@@ -2,6 +2,7 @@
   gcode.h - rs274/ngc parser.
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2011-2016 Sungeun K. Jeon for Gnea Research LLC
   Copyright (c) 2009-2011 Simen Svale Skogsrud
 
@@ -45,12 +46,16 @@
 #define MODAL_GROUP_M7 12 // [M3,M4,M5] Spindle turning
 #define MODAL_GROUP_M8 13 // [M7,M8,M9] Coolant control
 #define MODAL_GROUP_M9 14 // [M56] Override control
+#define MODAL_GROUP_M10 15 // [M62-M65] Digital output -Non-modal
+#ifdef USE_OUTPUT_PWM
+  #define MODAL_GROUP_M11 16 // [M67-M68] Analog output -Non-modal
+#endif
 
 // Define command actions for within execution-type modal groups (motion, stopping, non-modal). Used
 // internally by the parser to know which command to execute.
-// NOTE: Some macro values are assigned specific values to make g-code state reporting and parsing 
+// NOTE: Some macro values are assigned specific values to make g-code state reporting and parsing
 // compile a litte smaller. Necessary due to being completely out of flash on the 328p. Although not
-// ideal, just be careful with values that state 'do not alter' and check both report.c and gcode.c 
+// ideal, just be careful with values that state 'do not alter' and check both report.c and gcode.c
 // to see how they are used, if you need to alter them.
 
 // Modal Group G0: Non-modal actions
@@ -132,24 +137,44 @@
   #define OVERRIDE_DISABLED  1 // Parking disabled.
 #endif
 
+// Modal Group M10: Digital output (non modal)
+#define NON_MODAL_DIGITAL_SYNC_ON       62 // M62
+#define NON_MODAL_DIGITAL_SYNC_OFF      63 // M63
+#define NON_MODAL_DIGITAL_IMMEDIATE_ON  64 // M64
+#define NON_MODAL_DIGITAL_IMMEDIATE_OFF 65 // M65
+
+#ifdef USE_OUTPUT_PWM
+  // Modal Group M11: Analog output (PWM) (non modal)
+  #define NON_MODAL_ANALOG_OUTPUT_SYNC       67 // M162
+  #define NON_MODAL_ANALOG_OUTPUT_IMMEDIATE  68 // M164
+#endif
 // Modal Group G12: Active work coordinate system
 // N/A: Stores coordinate system value (54-59) to change to.
 
 // Define parameter word mapping.
-#define WORD_F  0
-#define WORD_I  1
-#define WORD_J  2
-#define WORD_K  3
-#define WORD_L  4
-#define WORD_N  5
-#define WORD_P  6
-#define WORD_R  7
-#define WORD_S  8
-#define WORD_T  9
-#define WORD_X  10
-#define WORD_Y  11
-#define WORD_Z  12
-
+// Updated to 32 bits to support more than 16 values... Needed for new axis U, V & W
+#define DWORD_F  0
+#define DWORD_I  1
+#define DWORD_J  2
+#define DWORD_K  3
+#define DWORD_L  4
+#define DWORD_N  5
+#define DWORD_P  6
+#define DWORD_R  7
+#define DWORD_S  8
+#define DWORD_T  9
+#define DWORD_X 10
+#define DWORD_Y 11
+#define DWORD_Z 12
+#define DWORD_A 13
+#define DWORD_B 14
+#define DWORD_C 15
+#define DWORD_U 16
+#define DWORD_V 17
+#define DWORD_W 18
+#ifdef USE_OUTPUT_PWM
+  #define DWORD_Q 19
+#endif
 // Define g-code parser position updating flags
 #define GC_UPDATE_POS_TARGET   0 // Must be zero
 #define GC_UPDATE_POS_SYSTEM   1
@@ -161,7 +186,7 @@
 #define GC_PROBE_FAIL_INIT  GC_UPDATE_POS_NONE
 #define GC_PROBE_FAIL_END   GC_UPDATE_POS_TARGET
 #ifdef SET_CHECK_MODE_PROBE_TO_START
-  #define GC_PROBE_CHECK_MODE   GC_UPDATE_POS_NONE  
+  #define GC_PROBE_CHECK_MODE   GC_UPDATE_POS_NONE
 #else
   #define GC_PROBE_CHECK_MODE   GC_UPDATE_POS_TARGET
 #endif
@@ -198,27 +223,41 @@ typedef struct {
 
 typedef struct {
   float f;         // Feed
+#if N_AXIS > 3
+  float ijk[N_AXIS];    // axes offsets for XYZ & AB(C)
+#else
   float ijk[3];    // I,J,K Axis arc offsets
+#endif
   uint8_t l;       // G10 or canned cycles parameters
   int32_t n;       // Line number
+  #ifdef USE_OUTPUT_PWM
+    float q;         // Output PWM valus
+  #endif
   float p;         // G10 or dwell parameters
-  // float q;      // G82 peck drilling
   float r;         // Arc radius
   float s;         // Spindle speed
   uint8_t t;       // Tool selection
+#if N_AXIS > 3
+  float xyz[N_AXIS];    // X,Y,Z Translational axes & A,B,(C)
+#else
   float xyz[3];    // X,Y,Z Translational axes
+#endif
 } gc_values_t;
 
 
 typedef struct {
   gc_modal_t modal;
 
-  float spindle_speed;          // RPM
-  float feed_rate;              // Millimeters/min
-  uint8_t tool;                 // Tracks tool number. NOT USED.
-  int32_t line_number;          // Last line number sent
+  float spindle_speed;           // RPM
+  #ifdef USE_OUTPUT_PWM
+    float output_volts;          // Output PWM value
+    uint8_t output_last_command; // Last command used to modify output PWM
+  #endif
+  float feed_rate;               // Millimeters/min
+  uint8_t tool;                  // Tracks tool number. NOT USED.
+  int32_t line_number;           // Last line number sent
 
-  float position[N_AXIS];       // Where the interpreter considers the tool to be at this point in the code
+  float position[N_AXIS];        // Where the interpreter considers the tool to be at this point in the code
 
   float coord_system[N_AXIS];    // Current work coordinate system (G54+). Stores offset from absolute machine
                                  // position in mm. Loaded from EEPROM when called.

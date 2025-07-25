@@ -1,10 +1,8 @@
 /*
-  limits.h - code pertaining to limit-switches and performing the homing cycle
+  analog_control.h - Read analog input
   Part of Grbl
 
   Copyright (c) 2017-2022 Gauthier Briere
-  Copyright (c) 2012-2016 Sungeun K. Jeon for Gnea Research LLC
-  Copyright (c) 2009-2011 Simen Svale Skogsrud
 
   Grbl is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,24 +18,30 @@
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef limits_h
-#define limits_h
+#ifndef analog_control_h
+#define analog_control_h
 
+#define OUTPUT_PWM_STATE_OFF  0 // Must be 0
+#define OUTPUT_PWM_STATE_ON       bit(0)
 
-// Initialize the limits module
-void limits_init();
-
-// Returns limit state as a bit-wise uint8 variable.
-uint8_t limits_get_state();
-
-// Perform one portion of the homing cycle based on the input settings.
-void limits_go_home(uint8_t cycle_mask);
-
-// Check for soft limit violations
-void limits_soft_check(float *target);
-
-// Hard limit error for RAMPS non interrupt hardware limits
-#ifdef ENABLE_RAMPS_HW_LIMITS
-  void ramps_hard_limit();
+#ifndef cbi
+  #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif
+#ifndef sbi
+  #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
+
+#ifdef USE_OUTPUT_PWM
+
+float o_pwm_gradient();
+
+  void output_pwm_init();
+  uint8_t output_pwm_get_state();
+  void output_pwm_stop();
+  void output_pwm_set_value(uint16_t pwm_value);
+  uint16_t output_compute_pwm_value(float volts);
+  void output_pwm_set_state(uint8_t state, float volts);
+  void output_pwm_sync(uint8_t state, float volts);
+#endif // USE_OUTPUT_PWM
+
 #endif

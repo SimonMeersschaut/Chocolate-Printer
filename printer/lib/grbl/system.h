@@ -2,6 +2,7 @@
   system.h - Header for system level commands and real-time processes
   Part of Grbl
 
+  Copyright (c) 2017-2022 Gauthier Briere
   Copyright (c) 2014-2016 Sungeun K. Jeon for Gnea Research LLC
 
   Grbl is free software: you can redistribute it and/or modify
@@ -28,26 +29,27 @@
 // NOTE: The system executor uses an unsigned 8-bit volatile variable (8 flag limit.) The default
 // flags are always false, so the realtime protocol only needs to check for a non-zero value to
 // know when there is a realtime command to execute.
-#define EXEC_STATUS_REPORT  bit(0) // bitmask 00000001
-#define EXEC_CYCLE_START    bit(1) // bitmask 00000010
-#define EXEC_CYCLE_STOP     bit(2) // bitmask 00000100
-#define EXEC_FEED_HOLD      bit(3) // bitmask 00001000
-#define EXEC_RESET          bit(4) // bitmask 00010000
-#define EXEC_SAFETY_DOOR    bit(5) // bitmask 00100000
-#define EXEC_MOTION_CANCEL  bit(6) // bitmask 01000000
-#define EXEC_SLEEP          bit(7) // bitmask 10000000
+#define EXEC_STATUS_REPORT  bit(0) // bitmask 00000001   1
+#define EXEC_CYCLE_START    bit(1) // bitmask 00000010   2
+#define EXEC_CYCLE_STOP     bit(2) // bitmask 00000100   4
+#define EXEC_FEED_HOLD      bit(3) // bitmask 00001000   8
+#define EXEC_RESET          bit(4) // bitmask 00010000  16
+#define EXEC_SAFETY_DOOR    bit(5) // bitmask 00100000  32
+#define EXEC_MOTION_CANCEL  bit(6) // bitmask 01000000  64
+#define EXEC_SLEEP          bit(7) // bitmask 10000000 128
 
 // Alarm executor codes. Valid values (1-255). Zero is reserved.
-#define EXEC_ALARM_HARD_LIMIT                 1
-#define EXEC_ALARM_SOFT_LIMIT                 2
-#define EXEC_ALARM_ABORT_CYCLE                3
-#define EXEC_ALARM_PROBE_FAIL_INITIAL         4
-#define EXEC_ALARM_PROBE_FAIL_CONTACT         5
-#define EXEC_ALARM_HOMING_FAIL_RESET          6
-#define EXEC_ALARM_HOMING_FAIL_DOOR           7
-#define EXEC_ALARM_HOMING_FAIL_PULLOFF        8
-#define EXEC_ALARM_HOMING_FAIL_APPROACH       9
-#define EXEC_ALARM_HOMING_FAIL_DUAL_APPROACH  10
+#define EXEC_ALARM_HARD_LIMIT            1
+#define EXEC_ALARM_SOFT_LIMIT            2
+#define EXEC_ALARM_ABORT_CYCLE           3
+#define EXEC_ALARM_PROBE_FAIL_INITIAL    4
+#define EXEC_ALARM_PROBE_FAIL_CONTACT    5
+#define EXEC_ALARM_HOMING_FAIL_RESET     6
+#define EXEC_ALARM_HOMING_FAIL_DOOR      7
+#define EXEC_ALARM_HOMING_FAIL_PULLOFF   8
+#define EXEC_ALARM_HOMING_FAIL_APPROACH  9
+#define EXEC_ALARM_HOMING_FAIL_TRAVEL   10
+#define EXEC_ALARM_SERIAL_RX_OVERFLOW   11
 
 // Override bit maps. Realtime bitflags to control feed, rapid, spindle, and coolant overrides.
 // Spindle/coolant and feed/rapids are separated into two controlling flag variables.
@@ -96,24 +98,17 @@
 
 // Define step segment generator state flags.
 #define STEP_CONTROL_NORMAL_OP            0  // Must be zero.
-#define STEP_CONTROL_END_MOTION           bit(0)
-#define STEP_CONTROL_EXECUTE_HOLD         bit(1)
-#define STEP_CONTROL_EXECUTE_SYS_MOTION   bit(2)
-#define STEP_CONTROL_UPDATE_SPINDLE_PWM   bit(3)
+#define STEP_CONTROL_END_MOTION           bit(0) // 00000001   1
+#define STEP_CONTROL_EXECUTE_HOLD         bit(1) // 00000010   2
+#define STEP_CONTROL_EXECUTE_SYS_MOTION   bit(2) // 00000100   4
+#define STEP_CONTROL_UPDATE_SPINDLE_PWM   bit(3) // 00001000   8
 
 // Define control pin index for Grbl internal use. Pin maps may change, but these values don't.
-#ifdef ENABLE_SAFETY_DOOR_INPUT_PIN
-  #define N_CONTROL_PIN 4
-  #define CONTROL_PIN_INDEX_SAFETY_DOOR   bit(0)
-  #define CONTROL_PIN_INDEX_RESET         bit(1)
-  #define CONTROL_PIN_INDEX_FEED_HOLD     bit(2)
-  #define CONTROL_PIN_INDEX_CYCLE_START   bit(3)
-#else
-  #define N_CONTROL_PIN 3
-  #define CONTROL_PIN_INDEX_RESET         bit(0)
-  #define CONTROL_PIN_INDEX_FEED_HOLD     bit(1)
-  #define CONTROL_PIN_INDEX_CYCLE_START   bit(2)
-#endif
+#define N_CONTROL_PIN 4
+#define CONTROL_PIN_INDEX_SAFETY_DOOR   bit(0)
+#define CONTROL_PIN_INDEX_RESET         bit(1)
+#define CONTROL_PIN_INDEX_FEED_HOLD     bit(2)
+#define CONTROL_PIN_INDEX_CYCLE_START   bit(3)
 
 // Define spindle stop override control states.
 #define SPINDLE_STOP_OVR_DISABLED       0  // Must be zero.
@@ -126,15 +121,12 @@
 // Define global system variables
 typedef struct {
   uint8_t state;               // Tracks the current system state of Grbl.
-  uint8_t abort;               // System abort flag. Forces exit back to main loop for reset.             
+  uint8_t abort;               // System abort flag. Forces exit back to main loop for reset.
   uint8_t suspend;             // System suspend bitflag variable that manages holds, cancels, and safety door.
   uint8_t soft_limit;          // Tracks soft limit errors for the state machine. (boolean)
   uint8_t step_control;        // Governs the step segment generator depending on system state.
   uint8_t probe_succeeded;     // Tracks if last probing cycle was successful.
-  uint8_t homing_axis_lock;    // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
-  #ifdef ENABLE_DUAL_AXIS
-    uint8_t homing_axis_lock_dual;
-  #endif
+  uint8_t homing_axis_lock[N_AXIS];    // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
   uint8_t f_override;          // Feed rate override value in percent
   uint8_t r_override;          // Rapids override value in percent
   uint8_t spindle_speed_ovr;   // Spindle speed value in percent
@@ -144,8 +136,9 @@ typedef struct {
   #ifdef ENABLE_PARKING_OVERRIDE_CONTROL
     uint8_t override_ctrl;     // Tracks override control states.
   #endif
-  #ifdef VARIABLE_SPINDLE
-    float spindle_speed;
+  float spindle_speed;
+  #ifdef USE_OUTPUT_PWM
+    float output_volts; // GBGB TODO: Implémenter de la même manière que spindle_speed...
   #endif
 } system_t;
 extern system_t sys;
@@ -159,7 +152,19 @@ extern volatile uint8_t sys_rt_exec_state;   // Global realtime executor bitflag
 extern volatile uint8_t sys_rt_exec_alarm;   // Global realtime executor bitflag variable for setting various alarms.
 extern volatile uint8_t sys_rt_exec_motion_override; // Global realtime executor bitflag variable for motion-based overrides.
 extern volatile uint8_t sys_rt_exec_accessory_override; // Global realtime executor bitflag variable for spindle/coolant overrides.
-
+extern uint8_t axis_X_mask; // Global mask for axis X bits
+extern uint8_t axis_Y_mask; // Global mask for axis Y bits
+extern uint8_t axis_Z_mask; // Global mask for axis Z bits
+extern uint8_t axis_A_mask; // Global mask for axis A bits
+extern uint8_t axis_B_mask; // Global mask for axis B bits
+extern uint8_t axis_C_mask; // Global mask for axis C bits
+extern uint8_t axis_U_mask; // Global mask for axis A bits
+extern uint8_t axis_V_mask; // Global mask for axis B bits
+extern uint8_t axis_W_mask; // Global mask for axis C bits
+extern uint8_t axis_D_mask; // Global mask for axis A bits
+extern uint8_t axis_E_mask; // Global mask for axis B bits
+extern uint8_t axis_H_mask; // Global mask for axis C bits
+extern unsigned char axis_name[N_AXIS]; // Global table of axis names
 #ifdef DEBUG
   #define EXEC_DEBUG_REPORT  bit(0)
   extern volatile uint8_t sys_rt_exec_debug;
