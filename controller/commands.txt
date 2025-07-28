@@ -1,0 +1,11 @@
+$ = help	:	[HLP:$$ $# $G $I $N $x=val $Nx=line $J=line $SLP $C $X $H ~ ! ? ctrl-x]
+$$ = all settings	
+$G = status	:	[GC:G0 G54 G17 G21 G90 G94 M5 M9 T0 F0]
+$I		:	b'[VER:1.1h.20190825:]\r\n'
+			b'[OPT:,15,128]\r\n'
+$N		:	b'$N0=\r\n'
+		:	b'$N1=\r\n'
+$SLP		:	b'[MSG:Sleeping]\r\n'
+$C		:	b'[MSG:Enabled]\r\n'
+$X		:
+$H		:
