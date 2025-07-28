@@ -1,3 +1,15 @@
-GRBL docs: https://github.com/grbl/grbl
+\subsection{GRBL software}
 
-UGS: Universal Gcode Sender platform
+GRBL is an open source software that runs on an arduino.
+It accepts commands over the serial port and controlls the stepper motors.
+
+See documentation: \url{https://github.com/grbl/grbl}
+
+\subsection{Custom G200}
+
+We modified grbl to accept a new G200 command.
+When the controller receives a G200 command, it responds
+with \$G200=... where ... is the amount of commands in the
+buffer (that is received commands that are not executed yet).
+This way, our controller knows where in the execution the arduino
+currently is.
