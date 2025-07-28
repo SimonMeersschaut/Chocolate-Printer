@@ -123,6 +123,7 @@ uint8_t gc_execute_line(char *line)
      perform initial error-checks for command word modal group violations, for any repeated
      words, and for negative values set for the value words F, N, P, T, and S. */
 
+  uint8_t planner_buffer_size; // for custom G200 command
   uint32_t dword_bit; // Bit-value for assigning tracking variables
   uint8_t char_counter;
   char letter;
@@ -161,6 +162,20 @@ uint8_t gc_execute_line(char *line)
       case 'G':
         // Determine 'G' command and its modal group
         switch(int_value) {
+          case 200: // custom comand
+            // This custom command just echoes back the amount of
+            // commands that are planned (i.e. how many commands were
+            // received, bot not yet executed). It echoes this
+            // the serial COM, so that a controller can know where
+            // in the program the printer currently is.
+            planner_buffer_size = plan_get_block_buffer_count();
+            char buffer[12];  // Enough to hold 6 chars + 3 digits +2 chars + null terminator
+            sprintf(buffer, "$G200=%u\r\n", planner_buffer_size);  // Convert to string
+            
+            for (int i = 0; buffer[i] != '\0'; i++) {
+                serial_write(buffer[i]);
+            }
+            // printPgmString(PSTR(buffer)); 
           case 10: case 28: case 30: case 92:
             // Check for G10/28/30/92 being called with G0/1/2/3/38 on same block.
             // * G43.1 is also an axis command but is not explicitly defined this way.
