@@ -1,1 +1,9 @@
 Universal-G-Code-Sender/
+*.aux
+*.dvi
+*.fdb_latexmk
+*.fls
+*.log
+*.gz
+*.toc
+documentation/*.pdf

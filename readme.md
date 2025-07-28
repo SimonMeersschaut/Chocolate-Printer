@@ -55,7 +55,9 @@ Controller
 
 ![arduino_cnc_shield](docs/arduino_cnc_shield/arduino_cnc_shield.png)
 
-Arduino Mega CNC shield
+Arduino Mega CNC shield: RAMP1.4
+(https://www.manomano.fr/p/3d-controleur-dimprimante-ramps-14-mega-shield-pour-arduino-reprap-prusa-mendel-86220892)
+-> met Marlin?
 
 ### Extra hardware
 
