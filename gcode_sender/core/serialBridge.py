@@ -16,8 +16,10 @@ class SerialBridge:
     
     def read(self):
         return self.ser.read()
+        
 
     def write(self, data):
+        # print(f"> {data.strip()}")
         return self.ser.write(data.encode("utf-8"))
 
     def readline(self) -> str:
@@ -31,6 +33,7 @@ class SerialBridge:
                 
                 if char == '\n':
                     cpy = self._buffer
+                    # print(f"{cpy.strip()}")+
                     self._buffer = "" # clear buffer
                     return cpy
         return ""
