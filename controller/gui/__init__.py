@@ -1,5 +1,1 @@
-
-from .dash_site import Dashgui
-
-Dashgui().run()
-
+from .dash_site import Dashgui as Gui

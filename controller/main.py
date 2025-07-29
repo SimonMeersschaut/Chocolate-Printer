@@ -1,5 +1,9 @@
 from controller import Controller
-import gui
+from gui import Gui
 
-# c = Controller()
 
+controller = Controller()
+gui = Gui(
+
+)
+gui.run()

@@ -1,4 +1,4 @@
-from abc import ABC
+from .gui import Gui # Changed from .gui to gui for direct execution in a flat structure
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
@@ -7,14 +7,7 @@ import random
 from datetime import datetime, timedelta
 from collections import deque
 
-class Gui(ABC):
-    def __init__(self):
-        pass
-
-    def run(self):
-        pass
-
-# Sample G-code for demonstration
+# Sample G-code for demonstration (kept global as it represents the file content)
 sample_gcode = """
 G21 ; Set units to millimeters
 G90 ; Use absolute positioning
@@ -50,12 +43,15 @@ gcode_lines = [line.strip() for line in sample_gcode.strip().split('\n') if line
 
 class Dashgui(Gui):
     MAX_TEMP_DATA_POINTS = 40
+    GCODE_DISPLAY_FRAME_SIZE = 10 # Number of G-code lines to display
 
     def __init__(self):
-        super().__init__()
+        # Initialize the base Gui class with a dummy on_update function.
+        # In a Dash app, the main update logic is handled by Dash callbacks.
+        super().__init__(on_update=lambda: None)
         # Initialize the Dash app
         self.app = dash.Dash(__name__,
-                        external_stylesheets=['https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css'])
+                            external_stylesheets=['https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css'])
 
         # Instance deques to store temperature data for the live chart
         self.temperature_data = deque(maxlen=Dashgui.MAX_TEMP_DATA_POINTS)
@@ -124,7 +120,7 @@ class Dashgui(Gui):
                                     }
                                 ),
                                 html.Div(id='temperature-output', className="text-xl text-center mt-4 text-gray-300"),
-                                # Interval component to update the graph every second
+                                # Interval component to update the graph and G-code every second
                                 dcc.Interval(
                                     id='interval-component',
                                     interval=0.5 * 1000, # in milliseconds (0.5 seconds)
@@ -165,12 +161,6 @@ class Dashgui(Gui):
                             className="bg-gray-900 p-4 rounded-md font-mono text-sm overflow-auto mb-4",
                             style={'height': '250px', 'lineHeight': '1.5'}
                         ),
-                        html.Button(
-                            "Next G-code Line",
-                            id='next-line-button',
-                            n_clicks=0,
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 ease-in-out shadow-lg"
-                        ),
                         # Hidden dcc.Store to keep track of the current G-code line pointer
                         dcc.Store(id='current-line-pointer', data=0)
                     ]
@@ -181,6 +171,24 @@ class Dashgui(Gui):
         # Register callbacks
         self._register_callbacks()
 
+    def increment_pointer(self, current_pointer: int) -> int:
+        """
+        Increments the G-code pointer by one, cycling back to 0 if it reaches the end.
+        Args:
+            current_pointer: The current line number of the G-code.
+        Returns:
+            The new line number after incrementing.
+        """
+        return (current_pointer + 1) % len(gcode_lines)
+
+    def update(self):
+        """
+        Implements the abstract update method from Gui.
+        In this Dash context, it primarily serves to satisfy the ABC requirement.
+        The actual UI updates are handled by Dash callbacks.
+        """
+        self.on_update() # Calls the dummy lambda passed in __init__
+
     def _register_callbacks(self):
         # Callback to update the temperature graph and display based on slider and interval
         @self.app.callback(
@@ -190,7 +198,11 @@ class Dashgui(Gui):
             [Input('temperature-slider', 'value'),
             Input('interval-component', 'n_intervals')]
         )
-        def update_temperature(heating_percentage, n_intervals):
+        def update_temperature_and_slider_output(heating_percentage, n_intervals):
+            # Call the abstract update method from the base Gui class.
+            # This will execute the dummy lambda passed in __init__.
+            self.update()
+
             # Map heating_percentage (0-100) to temperature range (25-40)
             base_temp = 25 + (heating_percentage / 100) * (40 - 25)
 
@@ -241,36 +253,30 @@ class Dashgui(Gui):
             slider_text = f"Heating Level: {heating_percentage}%"
             return updated_figure, temp_text, slider_text
 
-        # Callback to update the G-code display
+        # Callback to update the G-code display automatically
         @self.app.callback(
             [Output('gcode-display', 'children'),
             Output('current-line-pointer', 'data')],
-            [Input('next-line-button', 'n_clicks')],
+            [Input('interval-component', 'n_intervals')], # Triggered by the interval
             [State('current-line-pointer', 'data')]
         )
-        def update_gcode_display(n_clicks, current_line_pointer):
-            FRAME_SIZE = 8 # lines to show in frame (even)
-
-            # Increment pointer only if the button was clicked (n_clicks > 0 implies a click)
-            if n_clicks > 0:
-                new_pointer = (current_line_pointer + 1) % len(gcode_lines) 
-            else:
-                new_pointer = current_line_pointer # Initial load
+        def update_gcode_display(n_intervals, current_line_pointer):
+            # Call the increment_pointer method of the Dashgui instance
+            new_pointer = self.increment_pointer(current_line_pointer)
 
             # Calculate the range of lines to display
-            # Ensure ... lines before ... and lines after (total with current)
-            start_index = int(max(0, new_pointer - FRAME_SIZE/2))
-            end_index = int(min(len(gcode_lines), new_pointer + FRAME_SIZE/2)) # lines after
+            # Ensure 5 lines before and 4 lines after (total 10 with current)
+            start_index = max(0, new_pointer - 5)
+            end_index = min(len(gcode_lines), new_pointer + 5)
 
-            # Adjust start/end if near beginning or end of file
-            if end_index - start_index < FRAME_SIZE:
-                if new_pointer < FRAME_SIZE/2: # Near beginning
+            # Adjust start/end if near beginning or end of file to maintain FRAME_SIZE
+            if end_index - start_index < self.GCODE_DISPLAY_FRAME_SIZE:
+                if new_pointer < 5: # Near beginning
                     start_index = 0
-                    end_index = min(len(gcode_lines), FRAME_SIZE)
-                elif new_pointer >= len(gcode_lines) - FRAME_SIZE/2: # Near end
+                    end_index = min(len(gcode_lines), self.GCODE_DISPLAY_FRAME_SIZE)
+                elif new_pointer >= len(gcode_lines) - 5: # Near end
                     end_index = len(gcode_lines)
-                    start_index = max(0, len(gcode_lines) - FRAME_SIZE)
-
+                    start_index = max(0, len(gcode_lines) - self.GCODE_DISPLAY_FRAME_SIZE)
 
             display_lines = []
             for i in range(start_index, end_index):
@@ -296,6 +302,7 @@ class Dashgui(Gui):
             return display_lines, new_pointer
 
     def run(self):
+        """Runs the Dash GUI application."""
         self.app.run(debug=True)
 
 # Main execution block
