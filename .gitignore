@@ -7,3 +7,4 @@ Universal-G-Code-Sender/
 *.gz
 *.toc
 documentation/*.pdf
+*.pyc
