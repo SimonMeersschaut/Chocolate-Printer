@@ -4,6 +4,9 @@ SERIAL_PORT = "COM4"
 
 class SerialBridge:
     def __init__(self):
+        ...
+        
+    def connect(self):
         self.ser = serial.Serial(
             SERIAL_PORT,
             baudrate=115200,
