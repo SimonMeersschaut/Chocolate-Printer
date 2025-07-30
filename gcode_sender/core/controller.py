@@ -11,18 +11,19 @@ TODO
 """
 class Controller:
     SERIAL_TIMEOUT = 1 # seconds
+    MAX_TEMP_OFFSET = 5 # degrees celcius
 
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
         self.commandIterator = SweepCommandIterator()
         self.serialBridge = SerialBridge()
         self.aprox_buffer = 0 # an estimate of the current planner buffer size in the arduino
         # this is a theoretical maximum
 
         self.gcode_file = ExampleGcodeFile()
+        self.register_event(events.NewGcodeFileHandler())
 
-        # handlers
-        self._on_update_temp = None
-        self.on_update_gcode_pointer = None
+        self.target_temperature = 20
     
     def connect(self):
         self.serialBridge.connect()
@@ -51,7 +52,7 @@ class Controller:
         while self.aprox_buffer < MAX_BUFFER_SIZE:
             if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                 raise RuntimeError("Timeout")
-            # allowed to send
+            # allowed to send TODO:
             # pointer = self.commandIterator.get_pointer()
             # command = self.commandIterator.get_text(pointer)
             # self.serialBridge.write(command + "\r\n")
@@ -70,13 +71,23 @@ class Controller:
             if "ok T0:" in line:
                 temp = int(line.split("ok T0:")[-1][:-2])
                 break
-        yield events.UpdateNozzleTemperature(temp)
-        return []
+        # check if temp is in bounds
+        if abs(self.target_temperature - temp) > Controller.MAX_TEMP_OFFSET:
+            self.logger.warn("Nozzle temperature is too far from the target.")
+        self.register_event(events.UpdateNozzleTemperature(temp))
+
+        # return all registered events
+        cpy = self.registered_events
+        self.register_event = []
+        return cpy
+    
+    def register_event(self, event: events.Event):
+        self.registered_events.append(event)
 
     def handle(self, event: events.Event):
         match event:
             case events.UpdateTargetTemperature(temperature=temp):
-                print("Update target temp")
+                self.target_temperature = temp
             case _:
                raise NotImplementedError("Event not catched.")
     

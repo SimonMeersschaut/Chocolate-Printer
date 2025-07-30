@@ -9,7 +9,8 @@ import tkinter as tk
 from tkinter import ttk
 
 class TkinterUi(AbstractUI):
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
         self.registered_events = []
 
         self.root = tk.Tk()
@@ -61,6 +62,8 @@ class TkinterUi(AbstractUI):
        match event:
             case events.UpdateNozzleTemperature(temperature=temp): # Match by type AND extract attribute
                 self.temperature_chart.add_temperature(temp)
+            case events.NewGcodeFileHandler(handler=handler):
+               ... # TODO
             case _:
                raise NotImplementedError("Event not catched.")
         

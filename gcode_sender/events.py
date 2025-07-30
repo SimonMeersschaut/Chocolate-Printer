@@ -12,3 +12,7 @@ class UpdateNozzleTemperature(Event):
 @dataclass(frozen=True)
 class UpdateTargetTemperature(Event):
     temperature: int
+
+@dataclass(frozen=True)
+class NewGcodeFileHandler(Event):
+    handler: object

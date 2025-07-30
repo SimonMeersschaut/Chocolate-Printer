@@ -10,12 +10,13 @@ class DarkTheme:
 
     def _configure_styles(self):
         """Applies the dark theme configurations to ttk widgets."""
+        FONT_SIZE = 14
         self.style.theme_use('clam')
         self.style.configure('DarkFrame.TFrame', background='#2c313a', relief='flat')
-        self.style.configure('DarkLabel.TLabel', background='#2c313a', foreground='#ffffff', font=('Inter', 12))
-        self.style.configure('Heading.TLabel', background='#2c313a', foreground='#ffffff', font=('Inter', 16, 'bold'))
+        self.style.configure('DarkLabel.TLabel', background='#2c313a', foreground='#ffffff', font=('Inter', 16))
+        self.style.configure('Heading.TLabel', background='#2c313a', foreground='#ffffff', font=('Inter', FONT_SIZE, 'bold'))
         self.style.configure('DarkText.TText', background='#1e2127', foreground='#ffffff', insertbackground='#ffffff', font=('monospace', 10))
-        self.style.configure('DarkButton.TButton', background='#4a90e2', foreground='#ffffff', font=('Inter', 12, 'bold'), borderwidth=0, focusthickness=3, focuscolor='none')
+        self.style.configure('DarkButton.TButton', background='#4a90e2', foreground='#ffffff', font=('Inter', FONT_SIZE, 'bold'), borderwidth=0, focusthickness=3, focuscolor='none')
         self.style.map('DarkButton.TButton',
                         background=[('active', '#357abd')],
                         foreground=[('active', '#ffffff')])

@@ -1,6 +1,7 @@
 from core import Controller
 from ui import Ui # Renamed Ui to PrinterGUI as per previous refactoring
 import tkinter as tk # Tkinter root will be managed here
+from logger import Logger
 
 class PrinterApplication:
     """
@@ -8,8 +9,8 @@ class PrinterApplication:
     Manages the setup, communication, and lifecycle of the application.
     """
     def __init__(self):
-        self.controller = Controller()
-        self.ui = Ui() # Pass the root to the UI
+        self.controller = Controller(Logger("Controller"))
+        self.ui = Ui(Logger("Ui")) # Pass the root to the UI
 
         self._update_job_id = None
         self.gcode_pointer = 0 # Manage gcode pointer state within the application
