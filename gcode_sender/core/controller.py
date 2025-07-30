@@ -17,12 +17,13 @@ class Controller:
         self.logger = logger
         self.commandIterator = SweepCommandIterator()
         self.serialBridge = SerialBridge()
-        self.aprox_buffer = 0 # an estimate of the current planner buffer size in the arduino
-        # this is a theoretical maximum
+        self.registered_events = []
 
         self.gcode_file = ExampleGcodeFile()
-        self.register_event(events.NewGcodeFileHandler())
+        self.register_event(events.NewGcodeFileHandler(self.gcode_file))
 
+        self.aprox_buffer = 0 # an estimate of the current planner buffer size in the arduino
+        # this is a theoretical maximum
         self.target_temperature = 20
     
     def connect(self):
@@ -64,6 +65,7 @@ class Controller:
         self.wait_for_ok() # first ok
         self.wait_for_ok() # second ok
         t_0 = time.time()
+        temp = -1
         while True:
             if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                 raise RuntimeError("Timeout")
@@ -74,11 +76,13 @@ class Controller:
         # check if temp is in bounds
         if abs(self.target_temperature - temp) > Controller.MAX_TEMP_OFFSET:
             self.logger.warn("Nozzle temperature is too far from the target.")
+        if temp == 0:
+            input('0')
         self.register_event(events.UpdateNozzleTemperature(temp))
 
         # return all registered events
         cpy = self.registered_events
-        self.register_event = []
+        self.registered_events = []
         return cpy
     
     def register_event(self, event: events.Event):

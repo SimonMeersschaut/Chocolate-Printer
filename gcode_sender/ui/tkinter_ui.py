@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import ttk
 
 class TkinterUi(AbstractUI):
-    def __init__(self, logger):
+    def __init__(self, logger, update:callable):
         self.logger = logger
         self.registered_events = []
 
@@ -18,8 +18,10 @@ class TkinterUi(AbstractUI):
         self.root.geometry("1000x800")
         self.root.configure(bg="#282c36")
 
+        self._update_job_id = None
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
         self._running = True
+        self._on_update = update
 
     def initialize(self):
         """Creates and lays out all the GUI elements using specialized components."""
@@ -55,15 +57,22 @@ class TkinterUi(AbstractUI):
 
 
         # G-code Execution Section
-        gcode_frame = ttk.Frame(bottom_frame, padding="15", style='DarkFrame.TFrame')
-        gcode_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.gcode_frame = ttk.Frame(bottom_frame, padding="15", style='DarkFrame.TFrame')
+        self.gcode_viewer = GcodeViewer(self.gcode_frame)
+        self.gcode_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    def run(self):
+        """TODO"""
+        self._periodic_update()
+        self.root.mainloop()
     
     def handle(self, event: events.Event):
        match event:
             case events.UpdateNozzleTemperature(temperature=temp): # Match by type AND extract attribute
                 self.temperature_chart.add_temperature(temp)
             case events.NewGcodeFileHandler(handler=handler):
-               ... # TODO
+               print("update filehandler")
+               self.gcode_viewer.set_fileHandler(handler)
             case _:
                raise NotImplementedError("Event not catched.")
         
@@ -82,15 +91,23 @@ class TkinterUi(AbstractUI):
         self.registered_events = []
         return cpy
 
-    def close(self):
-        """Cleans up resources and closes the GUI."""
+    def _periodic_update(self):
+        """
+        Performs periodic updates for the controller and UI.
+        This simulates continuous data flow and G-code progression.
+        """
+        if self._running:
+            self._on_update()
+
+            # Schedule the next update
+            if self._running:
+                self._update_job_id = self.root.after(500, self._periodic_update)
+            else:
+                print("UI is not running, stopping periodic updates.")
+    
+    def _on_closing(self):
         self._running = False
-        if self._update_job_id:
-            self.root.after_cancel(self._update_job_id)
         self.temperature_chart.close() # Close Matplotlib figure
         self.root.destroy()
-
-    def _on_closing(self):
-        """Handles the window closing event."""
-        print("Closing application...")
-        self.close() # Reuse the close method for consistent cleanup
+        if self._update_job_id:
+            self.root.after_cancel(self._update_job_id)
