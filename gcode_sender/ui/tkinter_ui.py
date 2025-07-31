@@ -4,18 +4,23 @@ from .heating_control import HeatingControl
 from .temperature_chart import TemperatureChart
 from .gcode_viewer import GcodeViewer
 import events
+from .actions_control import ActionsControl
 
 import tkinter as tk
 from tkinter import ttk
 
 class TkinterUi(AbstractUI):
+    MIN_WIDTH = 870
+    MIN_HEIGHT = 800
+
     def __init__(self, logger, update:callable):
         self.logger = logger
         self.registered_events = []
 
         self.root = tk.Tk()
         self.root.title("3D Printer Control Panel")
-        self.root.geometry("1000x800")
+        self.root.geometry(f"{TkinterUi.MIN_WIDTH}x{TkinterUi.MIN_HEIGHT}")
+        self.root.minsize(TkinterUi.MIN_WIDTH, TkinterUi.MIN_HEIGHT)
         self.root.configure(bg="#282c36")
 
         self._update_job_id = None
@@ -41,6 +46,15 @@ class TkinterUi(AbstractUI):
         temp_chart_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
         ttk.Label(temp_chart_frame, text="🔴 Current Temperature (Live Chart)", style='Heading.TLabel', foreground='#e74c3c').pack(anchor=tk.NW, pady=(0, 10))
         self.temperature_chart = TemperatureChart(temp_chart_frame)
+
+        actions_frame = ttk.Frame(top_frame, padding="0 15 0 0", style='DarkFrame.TFrame') # Add some top padding
+        actions_frame.pack(fill=tk.X, pady=(10,0)) # Fill horizontally within settings_frame
+        # Initialize ActionsControl, passing initial callbacks (which might be None at this point)
+        self.actions_control = ActionsControl(
+            actions_frame,
+            play_callback=lambda: self.register_event(events.PlayGcode),
+            pause_callback=lambda: self.register_event(events.PauseGcode),
+        )
 
         # Printer Settings Section
         settings_frame = ttk.Frame(top_frame, padding="15", style='DarkFrame.TFrame')
@@ -73,6 +87,8 @@ class TkinterUi(AbstractUI):
             case events.NewGcodeFileHandler(handler=handler):
                print("update filehandler")
                self.gcode_viewer.set_fileHandler(handler)
+            case events.SetGcodeLine(line=line):
+               self.gcode_viewer.set_gcode_pointer(line)
             case _:
                raise NotImplementedError("Event not catched.")
         
@@ -101,7 +117,7 @@ class TkinterUi(AbstractUI):
 
             # Schedule the next update
             if self._running:
-                self._update_job_id = self.root.after(500, self._periodic_update)
+                self._update_job_id = self.root.after(1000, self._periodic_update)
             else:
                 print("UI is not running, stopping periodic updates.")
     

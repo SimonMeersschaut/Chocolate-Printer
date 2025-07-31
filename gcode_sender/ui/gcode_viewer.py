@@ -23,7 +23,7 @@ class GcodeViewer:
         self.filehandler = None
 
     def set_gcode_pointer(self, pointer: int):
-        """
+        """ 
         Sets the pointer in the gcode to a specific line position.
         Auto-scrolls to the highlighted line.
         """

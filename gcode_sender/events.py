@@ -16,3 +16,19 @@ class UpdateTargetTemperature(Event):
 @dataclass(frozen=True)
 class NewGcodeFileHandler(Event):
     handler: object
+
+@dataclass(frozen=True)
+class SetGcodeLine(Event):
+    line: int
+
+
+
+# GCODE ACTIONS
+
+@dataclass(frozen=True)
+class PlayGcode(Event):
+    ...
+
+@dataclass(frozen=True)
+class PauseGcode(Event):
+    ...
