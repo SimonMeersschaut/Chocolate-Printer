@@ -175,7 +175,7 @@ uint8_t gc_execute_line(char *line)
             for (int i = 0; buffer[i] != '\0'; i++) {
                 serial_write(buffer[i]);
             }
-            // printPgmString(PSTR(buffer)); 
+            dword_bit = MODAL_GROUP_G0; // dont do anything
           case 10: case 28: case 30: case 92:
             // Check for G10/28/30/92 being called with G0/1/2/3/38 on same block.
             // * G43.1 is also an axis command but is not explicitly defined this way.
