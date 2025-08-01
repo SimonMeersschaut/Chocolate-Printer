@@ -29,9 +29,11 @@ class Controller:
         while "Grbl" not in self.serialBridge.readline():
             ...
         #
+        # self.serialBridge.write("$RST=*\r\n")
+        # self.wait_for_ok()
         self.serialBridge.write("G21\r\n") # mm
         self.wait_for_ok()
-        self.serialBridge.write("G91\r\n") # rel
+        self.serialBridge.write("G90\r\n") # absolute coords
         self.wait_for_ok()
     
     def set_heating(self, temperature:int):
@@ -43,17 +45,18 @@ class Controller:
         self.serialBridge.flush()
 
         # update buffer size
-        cpy = self.gcode_file.aprox_buffer
-        self.gcode_file.aprox_buffer = self.get_aprox_buffer()
-        print(self.gcode_file.aprox_buffer)
-        self.gcode_file.execution_line += max(0, cpy - self.gcode_file.aprox_buffer)
-        self.register_event(events.SetGcodeLine(self.gcode_file.execution_line))
+        if self.gcode_file.aprox_buffer <= 1:
+            cpy = self.gcode_file.aprox_buffer
+            self.gcode_file.aprox_buffer = self.get_aprox_buffer()
+            print(self.gcode_file.aprox_buffer)
+            self.gcode_file.execution_line += max(0, self.gcode_file.aprox_buffer - cpy)
+            self.register_event(events.SetGcodeLine(self.gcode_file.execution_line))
 
         # execute commands until buffer is full
         if self.gcode_file and self.gcode_file.playing:
             if self.gcode_file.com_line < self.gcode_file.get_size():
                 t_0 = time.time()
-                while self.gcode_file.aprox_buffer < Controller.MAX_BUFFER_SIZE:
+                while self.gcode_file.aprox_buffer > 1:
                     if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                         raise RuntimeError("Timeout")
                     # allowed to send TODO:
@@ -66,11 +69,11 @@ class Controller:
                             self.serialBridge.write(command + "\r\n")
                             self.wait_for_ok()
 
-                            self.gcode_file.aprox_buffer += 1
+                            self.gcode_file.aprox_buffer -= 1
                         self.gcode_file.com_line += 1
         
         # update metrics
-        self.serialBridge.write("M105\r\n") # ask extruder temp
+        self.serialBridge.write("G201\r\n") # ask extruder temp
         self.wait_for_ok() # first ok
         self.wait_for_ok() # second ok
         t_0 = time.time()
@@ -79,8 +82,12 @@ class Controller:
             if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                 raise RuntimeError("Timeout")
             line = self.serialBridge.readline()
-            if "ok T0:" in line: 
-                temp = int(line.split("ok T0:")[-1][:-2])
+            # print(line)
+            if "ok\r\n" == line:
+                ...
+            elif "$G201=" in line:
+                # answer
+                temp = int(line.split("=")[-1][:-2])
                 break
         # check if temp is in bounds
         if abs(self.target_temperature - temp) > Controller.MAX_TEMP_OFFSET:
@@ -115,21 +122,21 @@ class Controller:
                 raise RuntimeError("Timeout")
         
     def get_aprox_buffer(self):
-        # self.serialBridge.flush()
+        self.serialBridge.flush()
 
-        # self.serialBridge.write("G200\r\n") # custom command
-        # t_0 = time.time()
-        # while True:
-        #     if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
-        #         raise RuntimeError("Timeout")
-        #     line = self.serialBridge.readline()
-        #     print(line)
-        #     if "ok\r\n" == line:
-        #         ...
-        #     elif "$G200=" in line:
-        #         # answer
-        #         return int(line.split("=")[-1][:-2])
-        return 0
+        self.serialBridge.write("G200\r\n") # custom command
+        t_0 = time.time()
+        while True:
+            if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
+                raise RuntimeError("Timeout")
+            line = self.serialBridge.readline()
+            # print(line)
+            if "ok\r\n" == line:
+                ...
+            elif "$G200=" in line:
+                # answer
+                return int(line.split("=")[-1][:-2])
+        # return 0
 
 if __name__ == "__main__":
     c = Controller()

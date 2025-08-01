@@ -10,7 +10,7 @@ class DarkTheme:
 
     def _configure_styles(self):
         """Applies the dark theme configurations to ttk widgets."""
-        FONT_SIZE = 14
+        FONT_SIZE = 16
         self.style.theme_use('clam')
         self.style.configure('DarkFrame.TFrame', background='#2c313a', relief='flat')
         self.style.configure('DarkLabel.TLabel', background='#2c313a', foreground='#ffffff', font=('Inter', 16))

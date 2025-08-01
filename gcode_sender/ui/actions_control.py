@@ -37,7 +37,7 @@ class ActionsControl:
         if self.pause_callback:
             self.pause_callback()
 
-    def set_callbacks(self, play_cb, pause_cb, stop_cb):
-        """Allows setting/updating callbacks after initialization."""
-        self.play_callback = play_cb
-        self.pause_callback = pause_cb
+    # def set_callbacks(self, play_cb, pause_cb):
+        # """Allows setting/updating callbacks after initialization."""
+        # self.play_callback = play_cb
+        # self.pause_callback = pause_cb
