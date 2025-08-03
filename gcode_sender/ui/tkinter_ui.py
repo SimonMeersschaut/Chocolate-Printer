@@ -54,12 +54,13 @@ class TkinterUi(AbstractUI):
             actions_frame,
             play_callback=lambda: self.register_event(events.PlayGcode),
             pause_callback=lambda: self.register_event(events.PauseGcode),
+            jog_callback=lambda movement: self.register_event(events.Jog(movement))
         )
 
         # Printer Settings Section
         settings_frame = ttk.Frame(top_frame, padding="15", style='DarkFrame.TFrame')
         settings_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
-        ttk.Label(settings_frame, text="Printer Settings", style='Heading.TLabel').pack(anchor=tk.NW, pady=(0, 10))
+        # ttk.Label(settings_frame, text="Printer Settings", style='Heading.TLabel').pack(anchor=tk.NW, pady=(0, 10))
         
         # Pass the slider_callback to HeatingControl
         def update_heating_temp(level):
@@ -68,7 +69,6 @@ class TkinterUi(AbstractUI):
             # register event for controller
             self.register_event(events.UpdateTargetTemperature(level))
         self.heating_control = HeatingControl(settings_frame, on_update=update_heating_temp)
-
 
         # G-code Execution Section
         self.gcode_frame = ttk.Frame(bottom_frame, padding="15", style='DarkFrame.TFrame')

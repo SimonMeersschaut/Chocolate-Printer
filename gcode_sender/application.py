@@ -22,7 +22,7 @@ class PrinterApplication:
 
         for event in self.ui.update():
             self.controller.handle(event)
-
+        
     def run(self):
         """Initializes and runs the application."""
         print("Initializing application...")
@@ -30,11 +30,3 @@ class PrinterApplication:
         self.ui.initialize()     # Build the UI widgets
 
         self.ui.run()
-
-    # def stop(self):
-    #     """Performs cleanup when the application is closing."""
-    #     print("Stopping application...")
-    #     if self._update_job_id:
-    #         self.ui.root.after_cancel(self._update_job_id)
-    #     self.ui.close()
-    #     print("Application stopped.")

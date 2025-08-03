@@ -3,7 +3,7 @@ from .serialBridge import SerialBridge
 from .commandIterator import SweepCommandIterator
 from .filehandler import GcodeHandler
 import events
-
+from logger import NozzleTemperatureWarning
 
 """
 TODO
@@ -12,6 +12,7 @@ class Controller:
     MAX_BUFFER_SIZE = 1
     SERIAL_TIMEOUT = 5 # seconds
     MAX_TEMP_OFFSET = 5 # degrees celcius
+    JOG_DISTANCE = 10 # mm
 
     def __init__(self, logger):
         self.logger = logger
@@ -91,7 +92,7 @@ class Controller:
                 break
         # check if temp is in bounds
         if abs(self.target_temperature - temp) > Controller.MAX_TEMP_OFFSET:
-            self.logger.warn("Nozzle temperature is too far from the target.")
+            self.logger.show_message(NozzleTemperatureWarning())
         self.register_event(events.UpdateNozzleTemperature(temp))
 
         self.serialBridge.flush()
@@ -112,6 +113,13 @@ class Controller:
                 self.gcode_file.play()
             case events.PauseGcode:
                 self.gcode_file.pause()
+            case events.Jog(movement):
+                self.serialBridge.write("G91\r\n") # relative coords
+                self.wait_for_ok()
+                self.serialBridge.write(f"G0 X{movement[0]*Controller.JOG_DISTANCE} Y{movement[1]*Controller.JOG_DISTANCE} Z{movement[2]*Controller.JOG_DISTANCE} \r\n") # ask extruder temp
+                self.wait_for_ok()
+                self.serialBridge.write("G90\r\n") # absolute coords
+                self.wait_for_ok()
             case _:
                raise NotImplementedError("Event not catched: "+str(event))
     

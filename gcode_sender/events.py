@@ -22,6 +22,13 @@ class SetGcodeLine(Event):
     line: int
 
 
+#
+@dataclass(frozen=True)
+class Jog(Event):
+    movement: list # [delta_x, delta_y, delta_z]
+
+
+
 
 # GCODE ACTIONS
 
