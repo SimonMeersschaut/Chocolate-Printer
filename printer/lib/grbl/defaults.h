@@ -63,8 +63,11 @@
     #define DEFAULT_AXIS3_MAX_TRAVEL 200.0 // mm
     #if N_AXIS > 3
       #if AXIS_4_NAME != AXIS_1_NAME && AXIS_4_NAME != AXIS_2_NAME && AXIS_4_NAME != AXIS_3_NAME
-        #define DEFAULT_AXIS4_STEPS_PER_UNIT 8.888889 // Direct drive : (200 pas par tours * 1/16 microsteps)/360°
-        #define DEFAULT_AXIS4_MAX_RATE 1440 // °/mn
+        #define MICROSTEPS_AXIS4 4     // Microstepping = 1/4 pas
+        #define STEP_REVS_AXIS4 200    // Moteurs à 200 pas par tour
+        #define UNIT_PER_REV_AXIS4 2.0 // 2mm
+        #define DEFAULT_AXIS4_STEPS_PER_UNIT (MICROSTEPS_AXIS4*STEP_REVS_AXIS4/UNIT_PER_REV_AXIS4) // Direct drive : (200 pas par tours * 1/16 microsteps)/360°
+        #define DEFAULT_AXIS4_MAX_RATE (STEP_MAX_FREQUENCY/DEFAULT_AXIS4_STEPS_PER_UNIT*SECONDS_PER_MINUTE) // °/mn
         #define DEFAULT_AXIS4_ACCELERATION (50.0*60*60) // 100*60*60 mm/min^2 = 100 mm/sec^2
         #define DEFAULT_AXIS4_MAX_TRAVEL 360.0 // °
       #elif AXIS_4_NAME == AXIS_1_NAME

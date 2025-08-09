@@ -25,7 +25,7 @@ class SetGcodeLine(Event):
 #
 @dataclass(frozen=True)
 class Jog(Event):
-    movement: list # [delta_x, delta_y, delta_z]
+    movement: list # [delta_x, delta_y, delta_z, delta_z]
 
 
 

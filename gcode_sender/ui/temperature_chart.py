@@ -46,6 +46,8 @@ class TemperatureChart:
         self.ax.set_ylabel("Temperature (°C)", color='#cccccc')
         self.ax.set_title("Temperature Readings", color='#ffffff') # A more descriptive title
 
+        self.ax.set_ylim(20, 50)
+
 
     def add_temperature(self, temperature: int):
         """Adds a new temperature reading and updates the chart."""
@@ -58,8 +60,6 @@ class TemperatureChart:
 
         self.line.set_data(self.time_data, self.temperature_data)
         self.ax.set_xlim(self.time_data[0], self.time_data[-1])
-
-        self.ax.set_ylim(20, 40)
 
         # Adjust x-tick labels dynamically
         num_ticks = 5

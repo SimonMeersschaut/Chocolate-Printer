@@ -2,9 +2,7 @@
 
 ## About
 
-This project aims at modifying a 3D printer to make chocolate sculptures.
-To achieve this both hardware and software had to be modified.
-This repository provides all information necessary to recreate this yourself.
+This project focuses on modifying a 3D printer to create chocolate sculptures. Achieving this required changes to both the hardware and software. This repository contains all the information you need to replicate the setup yourself.
 
 ## Documentation
 

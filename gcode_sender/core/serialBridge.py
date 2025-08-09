@@ -1,6 +1,6 @@
 import serial
 
-SERIAL_PORT = "COM4"
+SERIAL_PORT = "COM5"
 
 class SerialBridge:
     def __init__(self):
@@ -19,7 +19,7 @@ class SerialBridge:
         
 
     def write(self, data):
-        # print(f"> {data.strip()}")
+        print(f"> {data.strip()}")
         return self.ser.write(data.encode("utf-8"))
 
     def readline(self) -> str:
@@ -35,6 +35,7 @@ class SerialBridge:
                     cpy = self._buffer
                     # print(cpy.strip())
                     self._buffer = "" # clear buffer
+                    print(cpy)
                     return cpy
         return ""
 

@@ -27,11 +27,20 @@ class Controller:
     def connect(self):
         self.serialBridge.connect()
         # initialize (wait for Grbl line)
+        t_0 = time.time()
         while "Grbl" not in self.serialBridge.readline():
-            ...
-        #
-        # self.serialBridge.write("$RST=*\r\n")
-        # self.wait_for_ok()
+            if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
+                raise RuntimeError("Timeout")
+        
+        # time.sleep(2)
+        self.serialBridge.write("$X\r\n")
+        self.wait_for_ok()
+        self.serialBridge.write("$22=0\r\n")
+        self.wait_for_ok()
+        self.serialBridge.write("$21=0\r\n")
+        self.wait_for_ok()
+
+
         self.serialBridge.write("G21\r\n") # mm
         self.wait_for_ok()
         self.serialBridge.write("G90\r\n") # absolute coords
@@ -39,8 +48,8 @@ class Controller:
     
     def set_heating(self, temperature:int):
         self.target_temperature = temperature
-        self.serialBridge.write(f"M104 S{temperature}\r\n")
-        self.wait_for_ok()
+        # self.serialBridge.write(f"M104 S{temperature}\r\n")
+        # self.wait_for_ok()
     
     def update(self):
         self.serialBridge.flush()
@@ -74,26 +83,26 @@ class Controller:
                         self.gcode_file.com_line += 1
         
         # update metrics
-        self.serialBridge.write("G201\r\n") # ask extruder temp
-        self.wait_for_ok() # first ok
-        self.wait_for_ok() # second ok
-        t_0 = time.time()
-        temp = -1
-        while True:
-            if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
-                raise RuntimeError("Timeout")
-            line = self.serialBridge.readline()
-            # print(line)
-            if "ok\r\n" == line:
-                ...
-            elif "$G201=" in line:
-                # answer
-                temp = int(line.split("=")[-1][:-2])
-                break
+        # self.serialBridge.write("G201\r\n") # ask extruder temp
+        # self.wait_for_ok() # first ok
+        # self.wait_for_ok() # second ok
+        # t_0 = time.time()
+        # temp = -1
+        # while True:
+        #     if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
+        #         raise RuntimeError("Timeout")
+        #     line = self.serialBridge.readline()
+        #     # print(line)
+        #     if "ok\r\n" == line:
+        #         ...
+        #     elif "$G201=" in line:
+        #         # answer
+        #         temp = int(line.split("=")[-1][:-2])
+        #         break
         # check if temp is in bounds
-        if abs(self.target_temperature - temp) > Controller.MAX_TEMP_OFFSET:
-            self.logger.show_message(NozzleTemperatureWarning())
-        self.register_event(events.UpdateNozzleTemperature(temp))
+        # if abs(self.target_temperature - temp) > Controller.MAX_TEMP_OFFSET:
+        #     self.logger.show_message(NozzleTemperatureWarning())
+        # self.register_event(events.UpdateNozzleTemperature(temp))
 
         self.serialBridge.flush()
 
@@ -116,7 +125,7 @@ class Controller:
             case events.Jog(movement):
                 self.serialBridge.write("G91\r\n") # relative coords
                 self.wait_for_ok()
-                self.serialBridge.write(f"G0 X{movement[0]*Controller.JOG_DISTANCE} Y{movement[1]*Controller.JOG_DISTANCE} Z{movement[2]*Controller.JOG_DISTANCE} \r\n") # ask extruder temp
+                self.serialBridge.write(f"G0 X{movement[0]*Controller.JOG_DISTANCE} Y{movement[1]*Controller.JOG_DISTANCE} Z{movement[2]*Controller.JOG_DISTANCE} E{movement[3]*Controller.JOG_DISTANCE}\r\n") # ask extruder temp
                 self.wait_for_ok()
                 self.serialBridge.write("G90\r\n") # absolute coords
                 self.wait_for_ok()
