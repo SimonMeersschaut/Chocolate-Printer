@@ -27,6 +27,11 @@
 
 // IMPORTANT: Any changes here requires a full re-compiling of the source code to propagate them.
 
+// For custom command
+// #define THERMOSISTER_0_PIN PA15
+
+
+
 #ifndef config_h
 #define config_h
 

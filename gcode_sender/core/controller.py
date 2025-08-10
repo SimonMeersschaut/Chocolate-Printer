@@ -83,26 +83,26 @@ class Controller:
                         self.gcode_file.com_line += 1
         
         # update metrics
-        # self.serialBridge.write("G201\r\n") # ask extruder temp
+        self.serialBridge.write("G201\r\n") # ask extruder temp
         # self.wait_for_ok() # first ok
         # self.wait_for_ok() # second ok
-        # t_0 = time.time()
-        # temp = -1
-        # while True:
-        #     if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
-        #         raise RuntimeError("Timeout")
-        #     line = self.serialBridge.readline()
-        #     # print(line)
-        #     if "ok\r\n" == line:
-        #         ...
-        #     elif "$G201=" in line:
-        #         # answer
-        #         temp = int(line.split("=")[-1][:-2])
-        #         break
+        t_0 = time.time()
+        temp = -1
+        while True:
+            if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
+                raise RuntimeError("Timeout")
+            line = self.serialBridge.readline()
+            # print(line)
+            if "ok\r\n" == line:
+                ...
+            elif "$G201=" in line:
+                # answer
+                temp = float(line.split("=")[-1][:-2]) # cut off "\r\n"
+                break
         # check if temp is in bounds
-        # if abs(self.target_temperature - temp) > Controller.MAX_TEMP_OFFSET:
-        #     self.logger.show_message(NozzleTemperatureWarning())
-        # self.register_event(events.UpdateNozzleTemperature(temp))
+        if abs(self.target_temperature - temp) > Controller.MAX_TEMP_OFFSET:
+            self.logger.show_message(NozzleTemperatureWarning())
+        self.register_event(events.UpdateNozzleTemperature(temp))
 
         self.serialBridge.flush()
 

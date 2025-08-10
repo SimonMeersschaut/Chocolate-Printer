@@ -20,6 +20,9 @@
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <Arduino.h>
+
+
 #ifndef nuts_bolts_h
 #define nuts_bolts_h
 
@@ -47,12 +50,21 @@
 #define clear_vector(a) memset(a, 0, sizeof(a))
 #define clear_vector_float(a) memset(a, 0.0, sizeof(float)*N_AXIS)
 // #define clear_vector_long(a) memset(a, 0.0, sizeof(long)*N_AXIS)
-#define max(a,b) (((a) > (b)) ? (a) : (b))
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
 #define min(a,b) (((a) < (b)) ? (a) : (b))
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+
 #define isequal_position_vector(a,b) !(memcmp(a, b, sizeof(float)*N_AXIS))
 
 // Bit field and masking macros
-#define bit(n) (1 << n)
+// #define bit(n) (1 << n)
 #define dwbit(n) ((uint32_t)1 << n)
 #define bit_true(x,mask) (x) |= (mask)
 #define bit_false(x,mask) (x) &= ~(mask)

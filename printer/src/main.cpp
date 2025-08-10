@@ -26,4 +26,4 @@ Released under the MIT-license. See license.txt for details.
 
 #include <grbl.h>
 
-// Do not alter this file!
+// do not alter this file

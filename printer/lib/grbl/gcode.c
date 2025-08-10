@@ -22,6 +22,8 @@
 
 #include "grbl.h"
 
+extern uint16_t read_analog_A15(void);
+
 // NOTE: Max line number is defined by the g-code standard to be 99999. It seems to be an
 // arbitrary value, and some GUIs may require more. So we increased it based on a max safe
 // value when converting a float (7.2 digit precision)s to an integer.
@@ -163,19 +165,36 @@ uint8_t gc_execute_line(char *line)
         // Determine 'G' command and its modal group
         switch(int_value) {
           case 200: // custom comand
-            // This custom command just echoes back the amount of
-            // commands that are planned (i.e. how many commands were
-            // received, bot not yet executed). It echoes this
-            // the serial COM, so that a controller can know where
-            // in the program the printer currently is.
-            planner_buffer_size = plan_get_block_buffer_count();
-            char buffer[12];  // Enough to hold 6 chars + 3 digits +2 chars + null terminator
-            sprintf(buffer, "$G200=%u\r\n", planner_buffer_size);  // Convert to string
-            
-            for (int i = 0; buffer[i] != '\0'; i++) {
-                serial_write(buffer[i]);
+            {
+              // This custom command just echoes back the amount of
+              // commands that are planned (i.e. how many commands were
+              // received, bot not yet executed). It echoes this
+              // the serial COM, so that a controller can know where
+              // in the program the printer currently is.
+              planner_buffer_size = plan_get_block_buffer_count();
+              char buffer[12];  // Enough to hold 6 chars + 3 digits +2 chars + null terminator
+              sprintf(buffer, "$G200=%u\r\n", planner_buffer_size);  // Convert to string
+              
+              for (int i = 0; buffer[i] != '\0'; i++) {
+                  serial_write(buffer[i]);
+              }
+              dword_bit = MODAL_GROUP_G0; // dont do anything
             }
-            dword_bit = MODAL_GROUP_G0; // dont do anything
+          case 201: // custom comand
+            {
+              // This custom command returns the current temperature
+              // of the T0 thermistor.
+              char buffer[15];  // Enough to hold 6 chars + 5 digits +2 chars + null terminator
+              double t = t0_get_temperature_celsius();
+              int whole = (int)t;
+              int frac = (int)((t - whole) * 1000); // 3 decimal places
+              sprintf(buffer, "$G201=%d.%03d\r\n", whole, abs(frac));
+              
+              for (int i = 0; buffer[i] != '\0'; i++) {
+                  serial_write(buffer[i]);
+              }
+              dword_bit = MODAL_GROUP_G0; // dont do anything
+            }
           case 10: case 28: case 30: case 92:
             // Check for G10/28/30/92 being called with G0/1/2/3/38 on same block.
             // * G43.1 is also an axis command but is not explicitly defined this way.
