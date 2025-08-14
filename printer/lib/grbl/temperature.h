@@ -22,12 +22,17 @@ TODO: documentation
 #define BETA_VALUE     3950.0    // common for Ender stock thermistors
 #define T0_KELVIN      298.15    // 25°C = 298.15 K
 
-
+#define TEMPERATURE_MARGIN 2 // how much the sensor may be off the target temp
 
 
 void adc_init(void);
 uint16_t read_adc(uint8_t channel);
 void temperature_init(void);
-double t0_get_temperature_celsius(void);
+double adc_to_celsius_beta(uint16_t);
+double get_extruder_temperature(void);
+void set_extruder_temperature(double);
+void update_temperature(void);
+
+void extruder_heater_init(void);
 
 #endif

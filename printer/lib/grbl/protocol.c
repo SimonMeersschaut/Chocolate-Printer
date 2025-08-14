@@ -166,6 +166,9 @@ void protocol_main_loop()
       }
     }
 
+    // update the temperature readings
+    update_temperature();
+
     // If there are no more characters in the serial read buffer to be processed and executed,
     // this indicates that g-code streaming has either filled the planner buffer or has
     // completed. In either case, auto-cycle start, if enabled, any queued moves.

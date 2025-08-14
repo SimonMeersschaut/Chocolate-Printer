@@ -164,36 +164,64 @@ uint8_t gc_execute_line(char *line)
       case 'G':
         // Determine 'G' command and its modal group
         switch(int_value) {
-          case 200: // custom comand
+          case 200: // custom comand TODO: docs
             {
               // This custom command just echoes back the amount of
               // commands that are planned (i.e. how many commands were
               // received, bot not yet executed). It echoes this
               // the serial COM, so that a controller can know where
               // in the program the printer currently is.
+              
               planner_buffer_size = plan_get_block_buffer_count();
+              
               char buffer[12];  // Enough to hold 6 chars + 3 digits +2 chars + null terminator
               sprintf(buffer, "$G200=%u\r\n", planner_buffer_size);  // Convert to string
               
               for (int i = 0; buffer[i] != '\0'; i++) {
                   serial_write(buffer[i]);
               }
-              dword_bit = MODAL_GROUP_G0; // dont do anything
+
+              dword_bit = MODAL_GROUP_G5; // dont do anything
+              break;
             }
-          case 201: // custom comand
+          case 201: // custom comand TODO: docs
             {
               // This custom command returns the current temperature
               // of the T0 thermistor.
-              char buffer[15];  // Enough to hold 6 chars + 5 digits +2 chars + null terminator
-              double t = t0_get_temperature_celsius();
+              double t = get_extruder_temperature();
               int whole = (int)t;
               int frac = (int)((t - whole) * 1000); // 3 decimal places
-              sprintf(buffer, "$G201=%d.%03d\r\n", whole, abs(frac));
               
+              char buffer[15];  // Enough to hold 6 chars + 5 digits +2 chars + null terminator
+              sprintf(buffer, "$G201=%d.%03d\r\n", whole, abs(frac));
               for (int i = 0; buffer[i] != '\0'; i++) {
                   serial_write(buffer[i]);
               }
-              dword_bit = MODAL_GROUP_G0; // dont do anything
+              dword_bit = MODAL_GROUP_G5; // dont do anything
+              break;
+            }
+          case 202: // custom command to set nozzle temperature
+            {
+                planner_buffer_size = plan_get_block_buffer_count(); // initialize it
+
+                // Example: parse a target temperature after G202
+                // Expect format: G202 S<temp>
+                float target_temperature = 0;
+                if (line[char_counter] == 'S') { // This check happens higher up usually
+                  char_counter++; // skip the 'S'
+                  read_float(line, &char_counter, &target_temperature); // read value and store
+                  set_extruder_temperature(target_temperature);
+                }
+
+                // For now just echo something
+                // char buffer[20];
+                // sprintf(buffer, "$SETTEMP=%d;%c\r\n", (int)target_temperature);
+                // for (int i = 0; buffer[i] != '\0'; i++) {
+                //     serial_write(buffer[i]);
+                // }
+
+                dword_bit = MODAL_GROUP_G5; // <-- non-motion group to avoid modal conflict
+                break;
             }
           case 10: case 28: case 30: case 92:
             // Check for G10/28/30/92 being called with G0/1/2/3/38 on same block.
@@ -338,6 +366,9 @@ uint8_t gc_execute_line(char *line)
               gc_block.non_modal_command = int_value;
               break;
           #endif
+          case 104: // M104 - Set extruder temperature
+            gc_block.user_defined_command = 104; // We'll handle it later
+            break;
           default: FAIL(STATUS_GCODE_UNSUPPORTED_COMMAND); // [Unsupported M command]
         }
 

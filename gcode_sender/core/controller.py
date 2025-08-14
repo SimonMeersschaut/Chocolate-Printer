@@ -48,8 +48,8 @@ class Controller:
     
     def set_heating(self, temperature:int):
         self.target_temperature = temperature
-        # self.serialBridge.write(f"M104 S{temperature}\r\n")
-        # self.wait_for_ok()
+        self.serialBridge.write(f"G202 S{temperature}\r\n")
+        self.wait_for_ok()
     
     def update(self):
         self.serialBridge.flush()

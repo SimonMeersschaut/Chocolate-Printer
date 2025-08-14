@@ -117,7 +117,7 @@ class TkinterUi(AbstractUI):
 
             # Schedule the next update
             if self._running:
-                self._update_job_id = self.root.after(100, self._periodic_update)
+                self._update_job_id = self.root.after(500, self._periodic_update)
             else:
                 print("UI is not running, stopping periodic updates.")
     

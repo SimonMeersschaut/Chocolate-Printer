@@ -221,6 +221,7 @@ typedef struct {
   uint8_t coolant;         // {M7,M8,M9}
   uint8_t spindle;         // {M3,M4,M5}
   uint8_t override;        // {M56}
+  
 } gc_modal_t;
 
 typedef struct {
@@ -274,6 +275,7 @@ typedef struct {
   uint8_t non_modal_command;
   gc_modal_t modal;
   gc_values_t values;
+  uint8_t user_defined_command; // TODO docs 
 } parser_block_t;
 
 
