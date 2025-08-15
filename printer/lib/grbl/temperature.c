@@ -14,7 +14,7 @@ void temperature_init(void){
 }
 
 double last_t0_reading = 0;
-double t0_target_temperature = 20;
+double t0_target_temperature = 0;
 
 void update_temperature(void){
     // update temperature reading
@@ -24,12 +24,12 @@ void update_temperature(void){
     last_t0_reading = c;
 
     // set extruder heating    
-    if (last_t0_reading >= t0_target_temperature + TEMPERATURE_MARGIN){
+    if (last_t0_reading >= t0_target_temperature){
         // too hot, turn heating off
         EXTRUDER_HEATER_PORT &= ~(1 << EXTRUDER_HEATER_PIN);
     }
 
-    if (last_t0_reading <= t0_target_temperature - TEMPERATURE_MARGIN){
+    if (last_t0_reading < t0_target_temperature){
         // too cold, turn heating on
         EXTRUDER_HEATER_PORT |= (1 << EXTRUDER_HEATER_PIN);
     }

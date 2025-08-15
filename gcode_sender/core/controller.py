@@ -48,7 +48,7 @@ class Controller:
     
     def set_heating(self, temperature:int):
         self.target_temperature = temperature
-        self.serialBridge.write(f"G202 S{temperature}\r\n")
+        self.serialBridge.write(f"M104 S{temperature}\r\n")
         self.wait_for_ok()
     
     def update(self):
@@ -83,7 +83,7 @@ class Controller:
                         self.gcode_file.com_line += 1
         
         # update metrics
-        self.serialBridge.write("G201\r\n") # ask extruder temp
+        self.serialBridge.write("M105\r\n") # ask extruder temp
         # self.wait_for_ok() # first ok
         # self.wait_for_ok() # second ok
         t_0 = time.time()
@@ -95,7 +95,7 @@ class Controller:
             # print(line)
             if "ok\r\n" == line:
                 ...
-            elif "$G201=" in line:
+            elif "$M105=" in line:
                 # answer
                 temp = float(line.split("=")[-1][:-2]) # cut off "\r\n"
                 break

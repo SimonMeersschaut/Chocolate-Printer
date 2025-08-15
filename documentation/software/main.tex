@@ -5,7 +5,7 @@ It accepts commands over the serial port and controlls the stepper motors.
 
 See documentation: \url{https://github.com/grbl/grbl}
 
-\subsection{Custom G200}
+\subsection{G200: Get buffer size}
 
 We modified grbl to accept a new G200 command.
 When the controller receives a G200 command, it responds
@@ -14,6 +14,20 @@ buffer (that is received commands that are not executed yet).
 This way, our controller knows where in the execution the arduino
 currently is.
 
-\subsection{M105}
+\subsection{M104: Set extruder temperature}
 
-For reading nozzle temperature.
+The gcode sender will send 'M104 S40' to set the temperture of the extruder to 40 degrees Celsius.
+
+\subsection{M105: Get extruder temperature}
+
+When the gcode sender send 'M105', the grbl controller
+will respond with '\$M105=25.4' if the temperture is 25.4 degrees
+Celsius.
+
+\subsection{Temperature control}
+
+The temperature can be set and monitored with the commands mentioned above.
+In the source code of the controller, we added a file 'temperature.c' which
+handles heating and temperature measurements. Every update the arduino
+reads the current temperature and decides if the heating should be on or off
+based on the target temperature.

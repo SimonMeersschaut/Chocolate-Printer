@@ -184,45 +184,6 @@ uint8_t gc_execute_line(char *line)
               dword_bit = MODAL_GROUP_G5; // dont do anything
               break;
             }
-          case 201: // custom comand TODO: docs
-            {
-              // This custom command returns the current temperature
-              // of the T0 thermistor.
-              double t = get_extruder_temperature();
-              int whole = (int)t;
-              int frac = (int)((t - whole) * 1000); // 3 decimal places
-              
-              char buffer[15];  // Enough to hold 6 chars + 5 digits +2 chars + null terminator
-              sprintf(buffer, "$G201=%d.%03d\r\n", whole, abs(frac));
-              for (int i = 0; buffer[i] != '\0'; i++) {
-                  serial_write(buffer[i]);
-              }
-              dword_bit = MODAL_GROUP_G5; // dont do anything
-              break;
-            }
-          case 202: // custom command to set nozzle temperature
-            {
-                planner_buffer_size = plan_get_block_buffer_count(); // initialize it
-
-                // Example: parse a target temperature after G202
-                // Expect format: G202 S<temp>
-                float target_temperature = 0;
-                if (line[char_counter] == 'S') { // This check happens higher up usually
-                  char_counter++; // skip the 'S'
-                  read_float(line, &char_counter, &target_temperature); // read value and store
-                  set_extruder_temperature(target_temperature);
-                }
-
-                // For now just echo something
-                // char buffer[20];
-                // sprintf(buffer, "$SETTEMP=%d;%c\r\n", (int)target_temperature);
-                // for (int i = 0; buffer[i] != '\0'; i++) {
-                //     serial_write(buffer[i]);
-                // }
-
-                dword_bit = MODAL_GROUP_G5; // <-- non-motion group to avoid modal conflict
-                break;
-            }
           case 10: case 28: case 30: case 92:
             // Check for G10/28/30/92 being called with G0/1/2/3/38 on same block.
             // * G43.1 is also an axis command but is not explicitly defined this way.
@@ -324,6 +285,38 @@ uint8_t gc_execute_line(char *line)
         // Determine 'M' command and its modal group
         if (mantissa > 0) { FAIL(STATUS_GCODE_COMMAND_VALUE_NOT_INTEGER); } // [No Mxx.x commands]
         switch(int_value) {
+          case 104: 
+          // Set nozzle temperature
+            {
+                planner_buffer_size = plan_get_block_buffer_count(); // initialize it
+                // Expect format: G202 S<temp>
+                float target_temperature = 0;
+                if (line[char_counter] == 'S') { // This check happens higher up usually
+                  char_counter++; // skip the 'S'
+                  read_float(line, &char_counter, &target_temperature); // read value and store
+                  set_extruder_temperature(target_temperature);
+                }
+
+                dword_bit = MODAL_GROUP_G5; // <-- non-motion group to avoid modal conflict
+                break;
+            }
+            case 105:
+            // Get nozzle temperature
+            {
+              // This custom command returns the current temperature
+              // of the T0 thermistor.
+              double t = get_extruder_temperature();
+              int whole = (int)t;
+              int frac = (int)((t - whole) * 1000); // 3 decimal places
+              
+              char buffer[15];  // Enough to hold 6 chars + 5 digits +2 chars + null terminator
+              sprintf(buffer, "$M105=%d.%03d\r\n", whole, abs(frac));
+              for (int i = 0; buffer[i] != '\0'; i++) {
+                  serial_write(buffer[i]);
+              }
+              dword_bit = MODAL_GROUP_G5; // dont do anything
+              break;
+            }
           case 0: case 1: case 2: case 30:
             dword_bit = MODAL_GROUP_M4;
             switch(int_value) {
@@ -366,9 +359,6 @@ uint8_t gc_execute_line(char *line)
               gc_block.non_modal_command = int_value;
               break;
           #endif
-          case 104: // M104 - Set extruder temperature
-            gc_block.user_defined_command = 104; // We'll handle it later
-            break;
           default: FAIL(STATUS_GCODE_UNSUPPORTED_COMMAND); // [Unsupported M command]
         }
 
