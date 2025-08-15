@@ -21,6 +21,9 @@ class NewGcodeFileHandler(Event):
 class SetGcodeLine(Event):
     line: int
 
+@dataclass(frozen=True)
+class NewGcodeFile(Event):
+    filename: str
 
 #
 @dataclass(frozen=True)

@@ -1,4 +1,3 @@
-Universal-G-Code-Sender/
 *.aux
 *.dvi
 *.fdb_latexmk
@@ -7,4 +6,6 @@ Universal-G-Code-Sender/
 *.gz
 *.toc
 documentation/*.pdf
+
 *.pyc
+**/__pycache__

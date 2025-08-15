@@ -1,14 +1,25 @@
 import tkinter as tk
 from tkinter import ttk
+import os
 
 class ActionsControl:
     """Manages the Play, Pause, Stop, and Jog buttons."""
-    def __init__(self, parent_frame: ttk.Frame, play_callback=None, pause_callback=None, stop_callback=None,
-                 jog_callback=None):
+    def __init__(
+            self,
+            parent_frame: ttk.Frame,
+            play_callback: callable = None,
+            pause_callback: callable = None,
+            stop_callback: callable = None,
+            jog_callback: callable = None,
+            open_file_callback: callable = None,
+        ):
+        self.parent_frame = parent_frame
+
         self.play_callback = play_callback
         self.pause_callback = pause_callback
         self.stop_callback = stop_callback
         self.jog_callback = jog_callback  # Accept a general jog callback
+        self.open_file_callback = open_file_callback
 
         ttk.Label(parent_frame, text="Actions", style='Heading.TLabel').pack(anchor=tk.NW, pady=(0, 10))
 
@@ -30,6 +41,14 @@ class ActionsControl:
             style='DarkButton.TButton'
         )
         self.pause_button.pack(side=tk.LEFT, expand=True, padx=5, pady=5)
+
+        self.open_file_button = ttk.Button(
+            button_frame,
+            text="📄 Open",
+            command=self._on_open_file,
+            style='DarkButton.TButton'
+        )
+        self.open_file_button.pack(side=tk.LEFT, expand=True, padx=5, pady=5)
 
         # Jog buttons section
         jog_frame = ttk.Frame(parent_frame, style='DarkFrame.TFrame')
@@ -68,3 +87,22 @@ class ActionsControl:
     def _on_jog(self, axis):
         if self.jog_callback:
             self.jog_callback(axis)
+        
+    def _on_open_file(self):
+        file = tk.filedialog.askopenfilename(
+            parent=self.parent_frame,
+            # mode='r',
+            title="Select a file",
+            initialdir="C:\\Users\\Simon\\Documents\\projecten\\Chocolate-Printer\\3d files\\",
+            filetypes=(("Gcode Slice", "*.gcode"),),
+            defaultextension="gcode",
+            multiple=False
+        )
+        if file is None:
+            # user canceled selection
+            return 
+
+        if self.open_file_callback is None:
+            raise ValueError()
+        
+        self.open_file_callback(file)

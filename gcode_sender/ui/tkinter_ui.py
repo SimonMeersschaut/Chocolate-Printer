@@ -2,7 +2,7 @@ from .abstract_ui import AbstractUI
 from .dark_theme import DarkTheme
 from .heating_control import HeatingControl
 from .temperature_chart import TemperatureChart
-from .gcode_viewer import GcodeViewer
+from .gcode import GcodeFrame
 import events
 from .actions_control import ActionsControl
 
@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import ttk
 
 class TkinterUi(AbstractUI):
-    MIN_WIDTH = 870
+    MIN_WIDTH = 1000
     MIN_HEIGHT = 800
 
     def __init__(self, logger, update:callable):
@@ -54,7 +54,8 @@ class TkinterUi(AbstractUI):
             actions_frame,
             play_callback=lambda: self.register_event(events.PlayGcode),
             pause_callback=lambda: self.register_event(events.PauseGcode),
-            jog_callback=lambda movement: self.register_event(events.Jog(movement))
+            jog_callback=lambda movement: self.register_event(events.Jog(movement)),
+            open_file_callback=lambda filename: self.register_event(events.NewGcodeFile(filename)),
         )
 
         # Printer Settings Section
@@ -72,7 +73,7 @@ class TkinterUi(AbstractUI):
 
         # G-code Execution Section
         self.gcode_frame = ttk.Frame(bottom_frame, padding="15", style='DarkFrame.TFrame')
-        self.gcode_viewer = GcodeViewer(self.gcode_frame)
+        self.gcode_viewer = GcodeFrame(self.gcode_frame)
         self.gcode_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def run(self):

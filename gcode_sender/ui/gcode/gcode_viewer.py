@@ -6,8 +6,6 @@ class GcodeViewer:
     def __init__(self, parent_frame: ttk.Frame):
         self.current_gcode_pointer = -1
 
-        ttk.Label(parent_frame, text="G-code Execution", style='Heading.TLabel').pack(anchor=tk.NW, pady=(0, 10))
-
         self.gcode_text = tk.Text(parent_frame, wrap=tk.WORD, height=15, width=80,
                                   background='#1e2127', foreground='#ffffff',
                                   insertbackground='#ffffff', font=('monospace', 10),
@@ -42,7 +40,10 @@ class GcodeViewer:
         """TODO"""
         self.filehandler = filehandler 
 
-        self.gcode_text.config(state=tk.NORMAL)
+        self.gcode_text.config(state=tk.NORMAL) # enable editing
+
+        self.gcode_text.delete('1.0', tk.END) # clear all contents
+
         # Populates the G-code text area with lines from the G-code file.
         for i in range(self.filehandler.get_size()):
             self.gcode_text.insert(tk.END, self.filehandler.get_line(i) + "\n")

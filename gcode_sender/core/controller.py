@@ -18,8 +18,8 @@ class Controller:
         self.logger = logger
         self.registered_events = []
 
-        self.gcode_file = GcodeHandler()
-        self.register_event(events.NewGcodeFileHandler(self.gcode_file))
+        self.set_gcode_file("3d files/out.gcode")
+
         self.serialBridge = SerialBridge()
 
         self.target_temperature = 20
@@ -55,32 +55,32 @@ class Controller:
         self.serialBridge.flush()
 
         # update buffer size
-        if self.gcode_file.aprox_buffer <= 1:
-            cpy = self.gcode_file.aprox_buffer
-            self.gcode_file.aprox_buffer = self.get_aprox_buffer()
-            print(self.gcode_file.aprox_buffer)
-            self.gcode_file.execution_line += max(0, self.gcode_file.aprox_buffer - cpy)
-            self.register_event(events.SetGcodeLine(self.gcode_file.execution_line))
+        if self.gcode_handler.aprox_buffer <= 1:
+            cpy = self.gcode_handler.aprox_buffer
+            self.gcode_handler.aprox_buffer = self.get_aprox_buffer()
+            print(self.gcode_handler.aprox_buffer)
+            self.gcode_handler.execution_line += max(0, self.gcode_handler.aprox_buffer - cpy)
+            self.register_event(events.SetGcodeLine(self.gcode_handler.execution_line))
 
         # execute commands until buffer is full
-        if self.gcode_file and self.gcode_file.playing:
-            if self.gcode_file.com_line < self.gcode_file.get_size():
+        if self.gcode_handler and self.gcode_handler.playing:
+            if self.gcode_handler.com_line < self.gcode_handler.get_size():
                 t_0 = time.time()
-                while self.gcode_file.aprox_buffer > 1:
+                while self.gcode_handler.aprox_buffer > 1:
                     if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                         raise RuntimeError("Timeout")
                     # allowed to send TODO:
-                    if self.gcode_file.com_line >= self.gcode_file.get_size():
+                    if self.gcode_handler.com_line >= self.gcode_handler.get_size():
                         # Finished sending
                         break
                     else:
-                        command = self.gcode_file.get_line(self.gcode_file.com_line)
+                        command = self.gcode_handler.get_line(self.gcode_handler.com_line)
                         if len(command) > 0 and command[0] != ';':
                             self.serialBridge.write(command + "\r\n")
                             self.wait_for_ok()
 
-                            self.gcode_file.aprox_buffer -= 1
-                        self.gcode_file.com_line += 1
+                            self.gcode_handler.aprox_buffer -= 1
+                        self.gcode_handler.com_line += 1
         
         # update metrics
         self.serialBridge.write("M105\r\n") # ask extruder temp
@@ -119,9 +119,11 @@ class Controller:
             case events.UpdateTargetTemperature(temperature=temp):
                 self.set_heating(temp)
             case events.PlayGcode:
-                self.gcode_file.play()
+                self.gcode_handler.play()
             case events.PauseGcode:
-                self.gcode_file.pause()
+                self.gcode_handler.pause()
+            case events.NewGcodeFile(filename):
+                self.set_gcode_file(filename)
             case events.Jog(movement):
                 self.serialBridge.write("G91\r\n") # relative coords
                 self.wait_for_ok()
@@ -153,7 +155,10 @@ class Controller:
             elif "$G200=" in line:
                 # answer
                 return int(line.split("=")[-1][:-2])
-        # return 0
+    
+    def set_gcode_file(self, filename: str):
+        self.gcode_handler = GcodeHandler(filename)
+        self.register_event(events.NewGcodeFileHandler(self.gcode_handler)) # update gui
 
 if __name__ == "__main__":
     c = Controller()
