@@ -16,24 +16,41 @@ class DarkTheme:
         self.style.configure('DarkLabel.TLabel', background='#2c313a', foreground='#ffffff', font=('Inter', 16))
         self.style.configure('Heading.TLabel', background='#2c313a', foreground='#ffffff', font=('Inter', FONT_SIZE, 'bold'))
         self.style.configure('DarkText.TText', background='#1e2127', foreground='#ffffff', insertbackground='#ffffff', font=('monospace', 10))
-        self.style.configure('DarkButton.TButton', background='#4a90e2', foreground='#ffffff', font=('Inter', FONT_SIZE, 'bold'), borderwidth=0, focusthickness=3, focuscolor='none')
+        self.style.configure('DarkButton.TButton', background='#4a90e2', foreground='#ffffff',
+                             font=('Inter', FONT_SIZE, 'bold'), borderwidth=0, focusthickness=3, focuscolor='none')
         self.style.map('DarkButton.TButton',
                         background=[('active', '#357abd')],
                         foreground=[('active', '#ffffff')])
         
-        # IMPORTANT: Define the layout for the specific Horizontal.DarkScale.TScale style
-        # Tkinter expects this specific name if you use "DarkScale.TScale" on a horizontal slider
-        self.style.layout('DarkScale.Horizontal.TScale', 
-                            [('Horizontal.Scale.trough', # Use Horizontal.Scale.trough as the base element
-                              {'children': [('Horizontal.Scale.slider', # Use Horizontal.Scale.slider
-                                             {'side': 'left', 'sticky': 'ns'})],
-                               'sticky': 'nswe'})])
+        # ----- Scale -----
+        self.style.layout('DarkScale.Horizontal.TScale',
+                          [('Horizontal.Scale.trough',
+                            {'children': [('Horizontal.Scale.slider',
+                                           {'side': 'left', 'sticky': 'ns'})],
+                             'sticky': 'nswe'})])
         
-        # Configure the actual style properties for DarkScale.Horizontal.TScale
-        self.style.configure('DarkScale.Horizontal.TScale', 
-                              background='#2c313a', troughcolor='#1e2127', slidercolor='#4a90e2',
-                              foreground='#ffffff', highlightbackground='#2c313a', borderwidth=0)
-
-        # Mapping for the slider color on active state
+        self.style.configure('DarkScale.Horizontal.TScale',
+                              background='#2c313a', troughcolor='#1e2127',
+                              slidercolor='#4a90e2',
+                              foreground='#ffffff', highlightbackground='#2c313a',
+                              borderwidth=0)
         self.style.map('DarkScale.Horizontal.TScale',
                         slidercolor=[('active', '#357abd')])
+
+        # ----- Progressbar -----
+        self.style.layout('Dark.Horizontal.TProgressbar',
+                          [('Horizontal.Progressbar.trough',
+                            {'children': [('Horizontal.Progressbar.pbar',
+                                           {'side': 'left', 'sticky': 'ns'})],
+                             'sticky': 'nswe'})])
+
+        self.style.configure('Dark.Horizontal.TProgressbar',
+                              troughcolor='#1e2127',
+                              background='#4a90e2',
+                              bordercolor='#2c313a',
+                              lightcolor='#4a90e2',
+                              darkcolor='#4a90e2',
+                              thickness=20)
+
+        self.style.map('Dark.Horizontal.TProgressbar',
+                        background=[('active', '#357abd')])

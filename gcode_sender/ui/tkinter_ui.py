@@ -53,6 +53,7 @@ class TkinterUi(AbstractUI):
         self.actions_control = ActionsControl(
             actions_frame,
             play_callback=lambda: self.register_event(events.PlayGcode),
+            home_callback=lambda: self.register_event(events.Home),
             pause_callback=lambda: self.register_event(events.PauseGcode),
             jog_callback=lambda movement: self.register_event(events.Jog(movement)),
             open_file_callback=lambda filename: self.register_event(events.NewGcodeFile(filename)),

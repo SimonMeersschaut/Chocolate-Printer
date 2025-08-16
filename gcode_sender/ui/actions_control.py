@@ -8,6 +8,7 @@ class ActionsControl:
             self,
             parent_frame: ttk.Frame,
             play_callback: callable = None,
+            home_callback: callable = None,
             pause_callback: callable = None,
             stop_callback: callable = None,
             jog_callback: callable = None,
@@ -16,10 +17,13 @@ class ActionsControl:
         self.parent_frame = parent_frame
 
         self.play_callback = play_callback
+        self.home_callback = home_callback
         self.pause_callback = pause_callback
         self.stop_callback = stop_callback
         self.jog_callback = jog_callback  # Accept a general jog callback
         self.open_file_callback = open_file_callback
+
+        self.playing = False
 
         ttk.Label(parent_frame, text="Actions", style='Heading.TLabel').pack(anchor=tk.NW, pady=(0, 10))
 
@@ -33,14 +37,6 @@ class ActionsControl:
             style='DarkButton.TButton'
         )
         self.play_button.pack(side=tk.LEFT, expand=True, padx=5, pady=5)
-
-        self.pause_button = ttk.Button(
-            button_frame,
-            text="⏸ Pause",
-            command=self._on_pause,
-            style='DarkButton.TButton'
-        )
-        self.pause_button.pack(side=tk.LEFT, expand=True, padx=5, pady=5)
 
         self.open_file_button = ttk.Button(
             button_frame,
@@ -76,13 +72,33 @@ class ActionsControl:
         for i in range(2):
             jog_frame.columnconfigure(i, weight=1)
 
-    def _on_play(self):
-        if self.play_callback:
-            self.play_callback()
 
-    def _on_pause(self):
-        if self.pause_callback:
-            self.pause_callback()
+        self.home_button = ttk.Button(
+            button_frame,
+            text="🏠 Home",
+            command=self._on_home,
+            style='DarkButton.TButton'
+        )
+        self.home_button.pack(side=tk.LEFT, expand=True, padx=5, pady=5)
+
+    def _on_play(self):
+        if self.playing:
+            # pause
+            if self.pause_callback:
+                self.pause_callback()
+                self.play_button.configure(text="▶ Play")
+                self.playing = False
+        else:
+            # play
+            if self.play_callback:
+                self.play_callback()
+                self.play_button.configure(text="⏸ Pause")
+                self.playing = True
+                
+
+    def _on_home(self):
+        if self.home_callback:
+            self.home_callback()
 
     def _on_jog(self, axis):
         if self.jog_callback:

@@ -4,21 +4,29 @@ from tkinter import ttk
 class GcodeViewer:
     """Manages the G-code text area, highlighting, and scrolling."""
     def __init__(self, parent_frame: ttk.Frame):
+        self.filehandler = None
         self.current_gcode_pointer = -1
 
-        self.gcode_text = tk.Text(parent_frame, wrap=tk.WORD, height=15, width=80,
+        self.gcode_text = tk.Text(parent_frame, wrap=tk.WORD, height=7, width=80,
                                   background='#1e2127', foreground='#ffffff',
                                   insertbackground='#ffffff', font=('monospace', 10),
                                   borderwidth=0, highlightthickness=0, relief='flat')
         self.gcode_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
-        
-        
-
         self.gcode_text.tag_configure("current_line", background="#3a4049", foreground="#2ecc71", font=('monospace', 10, 'bold'))
         self.gcode_text.tag_configure("comment", foreground="#888888")
         
-        self.filehandler = None
+        self.progress_bar = ttk.Progressbar(
+            parent_frame,
+            orient="horizontal",
+            length=200,
+            mode="determinate",
+            style='Dark.Horizontal.TProgressbar',
+            takefocus=True,
+            maximum=100,
+            # height=10,
+        )
+        self.progress_bar.pack(fill=tk.X, expand=True, pady=(0, 10))
 
     def set_gcode_pointer(self, pointer: int):
         """ 
@@ -33,6 +41,10 @@ class GcodeViewer:
             end_index = f"{pointer + 1}.end"
             self.gcode_text.tag_add("current_line", start_index, end_index)
             self.gcode_text.see(start_index)
+
+            # set progress bar
+            percentage = pointer/self.filehandler.get_size()*100
+            self.progress_bar["value"] = percentage
         else:
             self.current_gcode_pointer = -1
     

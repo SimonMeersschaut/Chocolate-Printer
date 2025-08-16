@@ -1,7 +1,7 @@
 import time
 from .serialBridge import SerialBridge
-from .commandIterator import SweepCommandIterator
-from .filehandler import GcodeHandler
+# from .commandIterator import SweepCommandIterator
+from .filehandler import GcodeHandler, EmptyGcodeHandler
 import events
 from logger import NozzleTemperatureWarning
 
@@ -9,7 +9,8 @@ from logger import NozzleTemperatureWarning
 TODO
 """
 class Controller:
-    MAX_BUFFER_SIZE = 1
+    MAX_BUFFER_SIZE = 20
+
     SERIAL_TIMEOUT = 5 # seconds
     MAX_TEMP_OFFSET = 5 # degrees celcius
     JOG_DISTANCE = 10 # mm
@@ -18,7 +19,8 @@ class Controller:
         self.logger = logger
         self.registered_events = []
 
-        self.set_gcode_file("3d files/out.gcode")
+        # self.gcode_handler = GcodeHandler("3d files/hart/hart.gcode")
+        self.set_gcode_file("3d files/hart/hart.gcode")
 
         self.serialBridge = SerialBridge()
 
@@ -35,9 +37,12 @@ class Controller:
         # time.sleep(2)
         self.serialBridge.write("$X\r\n")
         self.wait_for_ok()
-        self.serialBridge.write("$22=0\r\n")
+        self.serialBridge.write("$22=1\r\n") # enable homing
         self.wait_for_ok()
         self.serialBridge.write("$21=0\r\n")
+        self.wait_for_ok()
+
+        self.serialBridge.write("$5=1\r\n") # invert limit switches
         self.wait_for_ok()
 
 
@@ -55,18 +60,20 @@ class Controller:
         self.serialBridge.flush()
 
         # update buffer size
-        if self.gcode_handler.aprox_buffer <= 1:
+        if self.gcode_handler.aprox_buffer >= Controller.MAX_BUFFER_SIZE:
+            # buffer was full at the latest update
+            # check if some commands have been executed since
             cpy = self.gcode_handler.aprox_buffer
             self.gcode_handler.aprox_buffer = self.get_aprox_buffer()
             print(self.gcode_handler.aprox_buffer)
-            self.gcode_handler.execution_line += max(0, self.gcode_handler.aprox_buffer - cpy)
+            self.gcode_handler.execution_line += max(0, cpy - self.gcode_handler.aprox_buffer)
             self.register_event(events.SetGcodeLine(self.gcode_handler.execution_line))
 
         # execute commands until buffer is full
         if self.gcode_handler and self.gcode_handler.playing:
             if self.gcode_handler.com_line < self.gcode_handler.get_size():
                 t_0 = time.time()
-                while self.gcode_handler.aprox_buffer > 1:
+                while self.gcode_handler.aprox_buffer < Controller.MAX_BUFFER_SIZE:
                     if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                         raise RuntimeError("Timeout")
                     # allowed to send TODO:
@@ -75,17 +82,24 @@ class Controller:
                         break
                     else:
                         command = self.gcode_handler.get_line(self.gcode_handler.com_line)
-                        if len(command) > 0 and command[0] != ';':
+                        if len(command) == 0 or command[0] == ';' or command[0] == 'M': # skip comments and config commands
+                            self.gcode_handler.execution_line += 1
+                        elif command[0:3] == "G92":
+                            self.gcode_handler.execution_line += 1
+                        else:
                             self.serialBridge.write(command + "\r\n")
                             self.wait_for_ok()
 
-                            self.gcode_handler.aprox_buffer -= 1
+                            self.gcode_handler.aprox_buffer += 1
                         self.gcode_handler.com_line += 1
+
+        self.serialBridge.write("?\r\n")
+        self.wait_for_ok()
+        # self.
         
         # update metrics
         self.serialBridge.write("M105\r\n") # ask extruder temp
         # self.wait_for_ok() # first ok
-        # self.wait_for_ok() # second ok
         t_0 = time.time()
         temp = -1
         while True:
@@ -122,6 +136,9 @@ class Controller:
                 self.gcode_handler.play()
             case events.PauseGcode:
                 self.gcode_handler.pause()
+            case events.Home:
+                self.serialBridge.write("$H\r\n") # relative coords
+                self.wait_for_ok()
             case events.NewGcodeFile(filename):
                 self.set_gcode_file(filename)
             case events.Jog(movement):
@@ -141,6 +158,10 @@ class Controller:
                 raise RuntimeError("Timeout")
         
     def get_aprox_buffer(self):
+        """
+        Returns the amount of commands in the buffer.
+        That is, received commands that are not executed yet.
+        """
         self.serialBridge.flush()
 
         self.serialBridge.write("G200\r\n") # custom command

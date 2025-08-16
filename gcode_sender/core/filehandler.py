@@ -27,3 +27,21 @@ class GcodeHandler:
     def pause(self):
         if self.playing:
             self.playing = False
+
+
+class EmptyGcodeHandler:
+    def __init__(self, filename=None):
+        self.playing = False
+        self.aprox_buffer = 0
+    
+    def get_line(self, line: int):
+        return ""
+
+    def get_size(self):
+        return 1
+    
+    def play(self):
+        ...
+
+    def pause(self):
+        ...

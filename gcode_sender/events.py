@@ -31,6 +31,9 @@ class Jog(Event):
     movement: list # [delta_x, delta_y, delta_z, delta_z]
 
 
+@dataclass(frozen=True)
+class Home(Event):
+    ...
 
 
 # GCODE ACTIONS

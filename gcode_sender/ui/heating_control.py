@@ -7,7 +7,7 @@ class HeatingControl:
     def __init__(self, parent_frame: ttk.Frame, on_update=None):
         self._on_update = on_update
         self.slider_value = 20
-        ttk.Label(parent_frame, text="Heating", style='DarkLabel.TLabel').pack(anchor=tk.NW, pady=(5, 0))
+        ttk.Label(parent_frame, text="Extruder Temperature", style='DarkLabel.TLabel').pack(anchor=tk.NW, pady=(5, 0))
         self.heating_level_slider = tk.Scale(
             parent_frame,
             from_=20,
