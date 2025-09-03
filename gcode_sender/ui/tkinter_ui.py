@@ -65,11 +65,11 @@ class TkinterUi(AbstractUI):
         # ttk.Label(settings_frame, text="Printer Settings", style='Heading.TLabel').pack(anchor=tk.NW, pady=(0, 10))
         
         # Pass the slider_callback to HeatingControl
-        def update_heating_temp(level):
+        def update_heating_temp(tool, level):
             # update horizontal line in graph
-            self.temperature_chart.set_target_temperature(level)
+            self.temperature_chart.set_target_temperature(tool, level)
             # register event for controller
-            self.register_event(events.UpdateTargetTemperature(level))
+            self.register_event(events.UpdateTargetTemperature(tool, level))
         self.heating_control = HeatingControl(settings_frame, on_update=update_heating_temp)
 
         # G-code Execution Section
@@ -83,16 +83,16 @@ class TkinterUi(AbstractUI):
         self.root.mainloop()
     
     def handle(self, event: events.Event):
-       match event:
-            case events.UpdateNozzleTemperature(temperature=temp): # Match by type AND extract attribute
-                self.temperature_chart.add_temperature(temp)
+        match event:
+            case events.UpdateNozzleTemperature(tool=tool, temperature=temp):
+                self.temperature_chart.add_temperatures({tool: temp})
             case events.NewGcodeFileHandler(handler=handler):
-               print("update filehandler")
-               self.gcode_viewer.set_fileHandler(handler)
+                self.gcode_viewer.set_fileHandler(handler)
             case events.SetGcodeLine(line=line):
-               self.gcode_viewer.set_gcode_pointer(line)
+                self.gcode_viewer.set_gcode_pointer(line)
             case _:
-               raise NotImplementedError("Event not catched.")
+                raise NotImplementedError("Event not caught: " + str(event))
+
         
     def register_event(self, event: events.Event):
         self.registered_events.append(event)

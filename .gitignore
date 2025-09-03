@@ -9,3 +9,4 @@ documentation/*.pdf
 
 *.pyc
 **/__pycache__
+**/.vscode

@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk
-import os
 
 class ActionsControl:
     """Manages the Play, Pause, Stop, and Jog buttons."""

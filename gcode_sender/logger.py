@@ -40,9 +40,9 @@ class WarningMessage(Message):
 
 @dataclass(frozen=True)
 class NozzleTemperatureWarning(WarningMessage):
-    def __init__(self):
+    def __init__(self, tool):
         super().__init__(
-            "The nozzle temperature is too far from the target temperature."
+            f"The temperature for {tool} is too far from the target temperature."
         )
 
 ## ERROR MESSAGES ##

@@ -22,6 +22,25 @@
 
 #include "grbl.h"
 
+// Reads an integer from a string, updates the char_counter
+void read_int(const char *line, int *char_counter, int *value) {
+    int result = 0;
+    int sign = 1;
+
+    // Optional: handle negative sign
+    if (line[*char_counter] == '-') {
+        sign = -1;
+        (*char_counter)++;
+    }
+
+    while (line[*char_counter] >= '0' && line[*char_counter] <= '9') {
+        result = result * 10 + (line[*char_counter] - '0');
+        (*char_counter)++;
+    }
+
+    *value = result * sign;
+}
+
 extern uint16_t read_analog_A15(void);
 
 // NOTE: Max line number is defined by the g-code standard to be 99999. It seems to be an
@@ -286,37 +305,69 @@ uint8_t gc_execute_line(char *line)
         if (mantissa > 0) { FAIL(STATUS_GCODE_COMMAND_VALUE_NOT_INTEGER); } // [No Mxx.x commands]
         switch(int_value) {
           case 104: 
-          // Set nozzle temperature
+            // Set nozzle temperatures (support T0:xxx,T1:yyy)
             {
                 planner_buffer_size = plan_get_block_buffer_count(); // initialize it
-                // Expect format: G202 S<temp>
-                float target_temperature = 0;
-                if (line[char_counter] == 'S') { // This check happens higher up usually
-                  char_counter++; // skip the 'S'
-                  read_float(line, &char_counter, &target_temperature); // read value and store
-                  set_extruder_temperature(target_temperature);
+
+                // Example: M104 T0:200,T1:180
+                while (line[char_counter] != '\0') {
+                    if (line[char_counter] == 'T') {
+                        char_counter++; // skip 'T'
+                        int tool_index = 0;
+                        read_int(line, &char_counter, &tool_index); // read tool number (0 or 1)
+
+                        if (line[char_counter] == ':') {
+                            char_counter++; // skip ':'
+                            float target_temperature = 0;
+                            read_float(line, &char_counter, &target_temperature);
+
+                            if (tool_index == 0) {
+                                set_extruder_temperature(target_temperature);
+                            } else if (tool_index == 1) {
+                                set_syringe_temperature(target_temperature);
+                            }
+                        }
+                    }
+
+                    // Skip comma separators
+                    if (line[char_counter] == ',') {
+                        char_counter++;
+                    } else {
+                        break; // no more arguments
+                    }
                 }
 
-                dword_bit = MODAL_GROUP_G5; // <-- non-motion group to avoid modal conflict
+                dword_bit = MODAL_GROUP_G5; // non-motion group to avoid modal conflict
                 break;
             }
+
+
             case 105:
-            // Get nozzle temperature
-            {
-              // This custom command returns the current temperature
-              // of the T0 thermistor.
-              double t = get_extruder_temperature();
-              int whole = (int)t;
-              int frac = (int)((t - whole) * 1000); // 3 decimal places
-              
-              char buffer[15];  // Enough to hold 6 chars + 5 digits +2 chars + null terminator
-              sprintf(buffer, "$M105=%d.%03d\r\n", whole, abs(frac));
-              for (int i = 0; buffer[i] != '\0'; i++) {
-                  serial_write(buffer[i]);
+              // Get nozzle temperatures (T0 and T1)
+              {
+                  // --- T0 (extruder) ---
+                  double t0 = get_extruder_temperature();
+                  int t0_whole = (int)t0;
+                  int t0_frac = (int)((t0 - t0_whole) * 1000); // 3 decimal places
+
+                  // --- T1 (syringe) ---
+                  double t1 = get_syringe_temperature();
+                  int t1_whole = (int)t1;
+                  int t1_frac = (int)((t1 - t1_whole) * 1000); // 3 decimal places
+
+                  char buffer[40];  // enough for both temps + formatting
+                  sprintf(buffer, "$M105=T0:%d.%03d,T1:%d.%03d\r\n",
+                          t0_whole, abs(t0_frac),
+                          t1_whole, abs(t1_frac));
+
+                  for (int i = 0; buffer[i] != '\0'; i++) {
+                      serial_write(buffer[i]);
+                  }
+
+                  dword_bit = MODAL_GROUP_G5; // don't move
+                  break;
               }
-              dword_bit = MODAL_GROUP_G5; // dont do anything
-              break;
-            }
+
           case 0: case 1: case 2: case 30:
             dword_bit = MODAL_GROUP_M4;
             switch(int_value) {

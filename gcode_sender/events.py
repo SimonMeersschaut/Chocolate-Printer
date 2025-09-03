@@ -7,11 +7,13 @@ class Event:
 
 @dataclass(frozen=True)
 class UpdateNozzleTemperature(Event):
-    temperature: int # This makes 'temperature' an attribute of the event
+    tool: str          # e.g. "T0", "T1"
+    temperature: float # current temperature of that tool
 
 @dataclass(frozen=True)
 class UpdateTargetTemperature(Event):
-    temperature: int
+    tool: str          # e.g. "T0", "T1"
+    temperature: float # target temperature for that tool
 
 @dataclass(frozen=True)
 class NewGcodeFileHandler(Event):

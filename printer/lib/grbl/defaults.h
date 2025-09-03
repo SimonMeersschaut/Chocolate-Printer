@@ -36,11 +36,11 @@
     // EEPROM is explicitly wiped, either by a `$RST=*` command or Grbl detecting a settings
     // version type change (not frequent).
     #define MICROSTEPS_AXIS1 4     // Microstepping = 1/4 pas
-    #define STEP_REVS_AXIS1 200    // Moteurs à 200 pas par tour
+    #define STEP_REVS_AXIS1 50    // Moteurs à 200 pas par tour
     #define UNIT_PER_REV_AXIS1 2.0 // 2mm
     #define DEFAULT_AXIS1_STEPS_PER_UNIT (MICROSTEPS_AXIS1*STEP_REVS_AXIS1/UNIT_PER_REV_AXIS1) // 400
     #define MICROSTEPS_AXIS2 4     // Microstepping = 1/4 pas
-    #define STEP_REVS_AXIS2 200    // Moteurs à 200 pas par tour
+    #define STEP_REVS_AXIS2 50    // Moteurs à 200 pas par tour
     #define UNIT_PER_REV_AXIS2 2.0 // 2mm
     #define DEFAULT_AXIS2_STEPS_PER_UNIT (MICROSTEPS_AXIS2*STEP_REVS_AXIS2/UNIT_PER_REV_AXIS2)
     #define MICROSTEPS_AXIS3 4     // Microstepping = 1/4 pas
@@ -63,13 +63,14 @@
     #define DEFAULT_AXIS3_MAX_TRAVEL 200.0 // mm
     #if N_AXIS > 3
       #if AXIS_4_NAME != AXIS_1_NAME && AXIS_4_NAME != AXIS_2_NAME && AXIS_4_NAME != AXIS_3_NAME
+      // axis E
         #define MICROSTEPS_AXIS4 4     // Microstepping = 1/4 pas
-        #define STEP_REVS_AXIS4 200    // Moteurs à 200 pas par tour
-        #define UNIT_PER_REV_AXIS4 2.0 // 2mm
+        #define STEP_REVS_AXIS4 600    // Moteurs à 200 pas par tour
+        #define UNIT_PER_REV_AXIS4 6 // 2mm
         #define DEFAULT_AXIS4_STEPS_PER_UNIT (MICROSTEPS_AXIS4*STEP_REVS_AXIS4/UNIT_PER_REV_AXIS4) // Direct drive : (200 pas par tours * 1/16 microsteps)/360°
         #define DEFAULT_AXIS4_MAX_RATE (STEP_MAX_FREQUENCY/DEFAULT_AXIS4_STEPS_PER_UNIT*SECONDS_PER_MINUTE) // °/mn
         #define DEFAULT_AXIS4_ACCELERATION (50.0*60*60) // 100*60*60 mm/min^2 = 100 mm/sec^2
-        #define DEFAULT_AXIS4_MAX_TRAVEL 360.0 // °
+        #define DEFAULT_AXIS4_MAX_TRAVEL 200
       #elif AXIS_4_NAME == AXIS_1_NAME
         #define DEFAULT_AXIS4_STEPS_PER_UNIT DEFAULT_AXIS1_STEPS_PER_UNIT
         #define DEFAULT_AXIS4_MAX_RATE DEFAULT_AXIS1_MAX_RATE
