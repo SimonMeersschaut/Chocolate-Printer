@@ -24,6 +24,21 @@ class Controller:
         # Track per-tool target & current temperatures
         self.target_temperatures = {"T0": 20, "T1": 20}
         self.current_temperatures = {"T0": 0.0, "T1": 0.0}
+    
+    def write(self, line: str):
+        try:
+            return self.serialBridge.write(line + "\r\n")
+        except:
+            print("Arduino disconnected!")
+            self.is_connected = False
+            self.serialBridge.is_connected = False
+            self.register_event(events.ArduinoDisconnected())
+
+    def flush(self):
+        self.serialBridge.flush()
+
+    def readline(self):
+        return self.serialBridge.readline().replace("\r\n", "")
 
     def connect(self):
         try:
@@ -33,26 +48,24 @@ class Controller:
                 if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                     raise RuntimeError("Timeout")
 
-            self.serialBridge.write("$22=0\r\n")  # disable homing
+            self.write("$22=0")  # disable homing
 
             self.wait_for_ok()
 
-            self.serialBridge.write("$X\r\n")
+            self.write("$X")
             self.wait_for_ok()
 
-            self.serialBridge.write("$21=0\r\n")
+            self.write("$21=0")
             self.wait_for_ok()
 
-            self.serialBridge.write("$3=4\r\n")  # invert Z axis
+            self.write("$3=4")  # invert Z axis
             self.wait_for_ok()
 
-            self.serialBridge.write("G21\r\n")  # mm
+            self.write("G21")  # mm
             self.wait_for_ok()
-            self.serialBridge.write("G90\r\n")  # absolute coords
+            self.write("G90")  # absolute coords
             self.wait_for_ok()
 
-
-            self.wait_for_ok()
             self.is_connected = True
             self.serialBridge.is_connected = True
             self.register_event(events.ArduinoConnected())
@@ -67,7 +80,7 @@ class Controller:
         # Send full tuple (all tools), so firmware always has consistent state
         cmd_parts = [f"{t}:{temp}" for t, temp in self.target_temperatures.items()]
         cmd = ",".join(cmd_parts)
-        self.serialBridge.write(f"M104 {cmd}\r\n")
+        self.write(f"M104 {cmd}")
         self.wait_for_ok()
 
     def update(self):
@@ -106,19 +119,19 @@ class Controller:
                             ):
                                 self.gcode_handler.execution_line += 1
                             else:
-                                self.serialBridge.write(command + "\r\n")
+                                self.write(command + "")
                                 self.wait_for_ok()
                                 self.gcode_handler.aprox_buffer += 1
                             self.gcode_handler.com_line += 1
 
             # Request temperatures
-            self.serialBridge.write("M105\r\n")
+            self.write("M105")
             t_0 = time.time()
             while True:
                 if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                     raise RuntimeError("Timeout")
                 line = self.serialBridge.readline()
-                if "ok\r\n" == line:
+                if "ok" == line:
                     continue
                 elif "$M105=" in line:
                     # Parse tuple response: $M105=T0:200.000,T1:180.000
@@ -143,10 +156,11 @@ class Controller:
             self.is_connected = False
             self.serialBridge.is_connected = False
             self.register_event(events.ArduinoDisconnected())
-
-        cpy = self.registered_events
-        self.registered_events = []
-        return cpy
+        
+        finally:
+            cpy = self.registered_events
+            self.registered_events = []
+            return cpy
 
     def register_event(self, event: events.Event):
         self.registered_events.append(event)
@@ -163,12 +177,12 @@ class Controller:
                 case events.PauseGcode:
                     self.gcode_handler.pause()
                 case events.Home:
-                    self.serialBridge.write("$H\r\n")
+                    self.write("$H")
                     self.wait_for_ok()
                 case events.NewGcodeFile(filename):
                     self.set_gcode_file(filename)
                 case events.Jog(movement):
-                    self.serialBridge.write("G91\r\n")  # relative coords
+                    self.write("G91")  # relative coords
                     self.wait_for_ok()
                     command = (
                         f"G1 X{movement[0]*Controller.JOG_DISTANCE} "
@@ -176,11 +190,11 @@ class Controller:
                         f"Z{movement[2]*Controller.JOG_DISTANCE} "
                         f"E{movement[3]*Controller.JOG_DISTANCE + 7} "
                         f"B{movement[3]*Controller.JOG_DISTANCE + 7} "
-                        "F200\r\n"
+                        "F200"
                     )
-                    self.serialBridge.write(command)
+                    self.write(command)
                     self.wait_for_ok()
-                    self.serialBridge.write("G90\r\n")  # absolute coords
+                    self.write("G90")  # absolute coords
                     self.wait_for_ok()
                 case _:
                     raise NotImplementedError("Event not caught: " + str(event))
@@ -191,19 +205,19 @@ class Controller:
 
     def wait_for_ok(self):
         t_0 = time.time()
-        while "ok\r\n" not in self.serialBridge.readline():
+        while "ok" not in self.readline():
             if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                 raise RuntimeError("Timeout")
 
     def get_aprox_buffer(self):
-        self.serialBridge.flush()
-        self.serialBridge.write("G200\r\n")  # custom command
+        self.flush()
+        self.write("G200")  # custom command
         t_0 = time.time()
         while True:
             if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
                 raise RuntimeError("Timeout")
-            line = self.serialBridge.readline()
-            if "ok\r\n" == line:
+            line = self.readline()
+            if "ok" == line:
                 continue
             elif "$G200=" in line:
                 return int(line.split("=")[-1][:-2])

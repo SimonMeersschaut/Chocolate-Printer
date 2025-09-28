@@ -23,7 +23,7 @@ class TkinterUi(AbstractUI):
         self.root.minsize(TkinterUi.MIN_WIDTH, TkinterUi.MIN_HEIGHT)
         self.root.configure(bg="#282c36")
 
-        self.status_label = tk.Label(self.root, text="Disconnected", fg="red", bg="#282c36", font=("Arial", 10))
+        self.banner_label = tk.Label(self.root, text="Device Disconnected", fg="white", bg="red", font=("Arial", 14, "bold"), pady=5)
 
         self._update_job_id = None
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
@@ -33,23 +33,25 @@ class TkinterUi(AbstractUI):
     def initialize(self):
         """Creates and lays out all the GUI elements using specialized components."""
         
+        self.banner_label.pack(fill=tk.X, side=tk.TOP)
+        
         # Apply dark theme using the global ttk.Style instance
         self.theme = DarkTheme(self.root) # Call without arguments now
 
         # Main Layout Frames
-        top_frame = ttk.Frame(self.root, padding="10 10 10 10", style='DarkFrame.TFrame')
-        top_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.top_frame = ttk.Frame(self.root, padding="10 10 10 10", style='DarkFrame.TFrame')
+        self.top_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         bottom_frame = ttk.Frame(self.root, padding="10 10 10 10", style='DarkFrame.TFrame')
         bottom_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Temperature Chart Section
-        temp_chart_frame = ttk.Frame(top_frame, padding="15", style='DarkFrame.TFrame')
+        temp_chart_frame = ttk.Frame(self.top_frame, padding="15", style='DarkFrame.TFrame')
         temp_chart_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
         ttk.Label(temp_chart_frame, text="🔴 Current Temperature (Live Chart)", style='Heading.TLabel', foreground='#e74c3c').pack(anchor=tk.NW, pady=(0, 10))
         self.temperature_chart = TemperatureChart(temp_chart_frame)
 
-        actions_frame = ttk.Frame(top_frame, padding="0 15 0 0", style='DarkFrame.TFrame') # Add some top padding
+        actions_frame = ttk.Frame(self.top_frame, padding="0 15 0 0", style='DarkFrame.TFrame') # Add some top padding
         actions_frame.pack(fill=tk.X, pady=(10,0)) # Fill horizontally within settings_frame
         # Initialize ActionsControl, passing initial callbacks (which might be None at this point)
         self.actions_control = ActionsControl(
@@ -62,7 +64,7 @@ class TkinterUi(AbstractUI):
         )
 
         # Printer Settings Section
-        settings_frame = ttk.Frame(top_frame, padding="15", style='DarkFrame.TFrame')
+        settings_frame = ttk.Frame(self.top_frame, padding="15", style='DarkFrame.TFrame')
         settings_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
         # ttk.Label(settings_frame, text="Printer Settings", style='Heading.TLabel').pack(anchor=tk.NW, pady=(0, 10))
         
@@ -79,8 +81,6 @@ class TkinterUi(AbstractUI):
         self.gcode_viewer = GcodeFrame(self.gcode_frame)
         self.gcode_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
-
     def run(self):
         """TODO"""
         self._periodic_update()
@@ -95,9 +95,10 @@ class TkinterUi(AbstractUI):
             case events.SetGcodeLine(line=line):
                 self.gcode_viewer.set_gcode_pointer(line)
             case events.ArduinoConnected():
-                self.status_label.config(text="Connected", fg="green")
+                self.banner_label.pack_forget()
             case events.ArduinoDisconnected():
-                self.status_label.config(text="Disconnected", fg="red")
+                self.banner_label.pack(fill=tk.X, side=tk.TOP, before=self.top_frame)
+                
             case _:
                 raise NotImplementedError("Event not caught: " + str(event))
 
