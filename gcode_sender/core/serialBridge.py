@@ -1,10 +1,11 @@
 import serial
+from serial.serialutil import SerialException
 
 SERIAL_PORT = "COM5"
 
 class SerialBridge:
     def __init__(self):
-        ...
+        self.ser = None
         
     def connect(self):
         self.ser = serial.Serial(
@@ -14,11 +15,18 @@ class SerialBridge:
         )
         self._buffer = ""
     
+    def disconnect(self):
+        if self.ser and self.ser.is_open:
+            self.ser.close()
+
     def read(self):
+        if not self.ser:
+            raise SerialException("Not connected")
         return self.ser.read()
         
-
     def write(self, data):
+        if not self.ser:
+            raise SerialException("Not connected")
         print(f"> {data.strip()}")
         return self.ser.write(data.encode("utf-8"))
 
@@ -28,16 +36,20 @@ class SerialBridge:
             char = self.read()
             if char:
                 # print(char)
-                char = char.decode("utf-8")
+                try:
+                    char = char.decode("utf-8")
+                except UnicodeDecodeError:
+                    continue # Ignore non-utf8 characters
                 self._buffer += char
                 
                 if char == '\n':
                     cpy = self._buffer
-                    # print(cpy.strip())
+                    print(f"< {cpy.strip()}")
                     self._buffer = "" # clear buffer
-                    print(cpy)
                     return cpy
         return ""
 
     def flush(self):
-        self.ser.flush()
+        if self.ser:
+            self.ser.flush()
+

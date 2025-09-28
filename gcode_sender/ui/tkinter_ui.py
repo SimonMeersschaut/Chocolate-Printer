@@ -23,6 +23,8 @@ class TkinterUi(AbstractUI):
         self.root.minsize(TkinterUi.MIN_WIDTH, TkinterUi.MIN_HEIGHT)
         self.root.configure(bg="#282c36")
 
+        self.status_label = tk.Label(self.root, text="Disconnected", fg="red", bg="#282c36", font=("Arial", 10))
+
         self._update_job_id = None
         self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
         self._running = True
@@ -77,6 +79,8 @@ class TkinterUi(AbstractUI):
         self.gcode_viewer = GcodeFrame(self.gcode_frame)
         self.gcode_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
+        self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
+
     def run(self):
         """TODO"""
         self._periodic_update()
@@ -90,6 +94,10 @@ class TkinterUi(AbstractUI):
                 self.gcode_viewer.set_fileHandler(handler)
             case events.SetGcodeLine(line=line):
                 self.gcode_viewer.set_gcode_pointer(line)
+            case events.ArduinoConnected():
+                self.status_label.config(text="Connected", fg="green")
+            case events.ArduinoDisconnected():
+                self.status_label.config(text="Disconnected", fg="red")
             case _:
                 raise NotImplementedError("Event not caught: " + str(event))
 

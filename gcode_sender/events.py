@@ -47,3 +47,11 @@ class PlayGcode(Event):
 @dataclass(frozen=True)
 class PauseGcode(Event):
     ...
+
+@dataclass(frozen=True)
+class ArduinoConnected(Event):
+    ...
+
+@dataclass(frozen=True)
+class ArduinoDisconnected(Event):
+    ...
