@@ -89,12 +89,12 @@
       #endif
     #endif
     #if N_AXIS > 4
-      #if AXIS_5_NAME != AXIS_1_NAME && AXIS_5_NAME != AXIS_2_NAME && AXIS_5_NAME != AXIS_3_NAME && \
-          AXIS_5_NAME != AXIS_4_NAME
-        #define DEFAULT_AXIS5_STEPS_PER_UNIT 8.888889 // Direct drive : (200 pas par tours * 1/16 microsteps)/360°
-        #define DEFAULT_AXIS5_MAX_RATE 1440 // °/mn
-        #define DEFAULT_AXIS5_ACCELERATION (50.0*60*60) // 100*60*60 mm/min^2 = 100 mm/sec^2
-        #define DEFAULT_AXIS5_MAX_TRAVEL 180.0 // °
+      #if AXIS_4_NAME != AXIS_1_NAME && AXIS_4_NAME != AXIS_2_NAME && AXIS_4_NAME != AXIS_3_NAME
+        // Copy settings from ax 4
+        #define DEFAULT_AXIS5_STEPS_PER_UNIT DEFAULT_AXIS4_STEPS_PER_UNIT // Direct drive : (200 pas par tours * 1/16 microsteps)/360°
+        #define DEFAULT_AXIS5_MAX_RATE DEFAULT_AXIS4_MAX_RATE // °/mn
+        #define DEFAULT_AXIS5_ACCELERATION DEFAULT_AXIS4_ACCELERATION // 100*60*60 mm/min^2 = 100 mm/sec^2
+        #define DEFAULT_AXIS5_MAX_TRAVEL DEFAULT_AXIS4_MAX_TRAVEL // °
       #elif AXIS_5_NAME == AXIS_1_NAME
         #define DEFAULT_AXIS5_STEPS_PER_UNIT DEFAULT_AXIS1_STEPS_PER_UNIT
         #define DEFAULT_AXIS5_MAX_RATE DEFAULT_AXIS1_MAX_RATE
