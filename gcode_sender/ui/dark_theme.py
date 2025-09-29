@@ -54,3 +54,10 @@ class DarkTheme:
 
         self.style.map('Dark.Horizontal.TProgressbar',
                         background=[('active', '#357abd')])
+
+        # ----- Notebook -----
+        self.style.configure('TNotebook', background='#2c313a', borderwidth=0)
+        self.style.configure('TNotebook.Tab', background='#2c313a', foreground='#ffffff', padding=[10, 5], font=('Inter', 16, 'bold'))
+        self.style.map('TNotebook.Tab',
+                       background=[('selected', '#4a90e2'), ('active', '#357abd')],
+                       foreground=[('selected', '#ffffff'), ('active', '#ffffff')])

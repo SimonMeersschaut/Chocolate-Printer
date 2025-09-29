@@ -1,10 +1,10 @@
 from .abstract_ui import AbstractUI
 from .dark_theme import DarkTheme
-from .heating_control import HeatingControl
-from .temperature_chart import TemperatureChart
-from .gcode import GcodeFrame
+from .monitor.temperature_chart import TemperatureChart
+from .monitor.gcode import GcodeFrame
+from .monitor.actions_control import ActionsControl
+from .settings.heating_control import HeatingControl
 import events
-from .actions_control import ActionsControl
 
 import tkinter as tk
 from tkinter import ttk
@@ -36,24 +36,41 @@ class TkinterUi(AbstractUI):
         self.banner_label.pack(fill=tk.X, side=tk.TOP)
         
         # Apply dark theme using the global ttk.Style instance
-        self.theme = DarkTheme(self.root) # Call without arguments now
+        self.theme = DarkTheme(self.root)
 
-        # Main Layout Frames
-        self.top_frame = ttk.Frame(self.root, padding="10 10 10 10", style='DarkFrame.TFrame')
-        self.top_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Create a Notebook widget for tabs
+        self.notebook = ttk.Notebook(self.root, style='TNotebook')
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        bottom_frame = ttk.Frame(self.root, padding="10 10 10 10", style='DarkFrame.TFrame')
+        # Create frames for each tab
+        self.monitor_tab = ttk.Frame(self.notebook, style='DarkFrame.TFrame')
+        self.settings_tab = ttk.Frame(self.notebook, style='DarkFrame.TFrame')
+
+        self.notebook.add(self.monitor_tab, text='Monitor')
+        self.notebook.add(self.settings_tab, text='Settings')
+
+        # --- Monitor Tab ---
+        self._setup_monitor_tab()
+
+        # --- Settings Tab ---
+        self._setup_settings_tab()
+
+    def _setup_monitor_tab(self):
+        # Main Layout Frames for Monitor Tab
+        top_frame = ttk.Frame(self.monitor_tab, padding="10 10 10 10", style='DarkFrame.TFrame')
+        top_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        bottom_frame = ttk.Frame(self.monitor_tab, padding="10 10 10 10", style='DarkFrame.TFrame')
         bottom_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Temperature Chart Section
-        temp_chart_frame = ttk.Frame(self.top_frame, padding="15", style='DarkFrame.TFrame')
+        temp_chart_frame = ttk.Frame(top_frame, padding="15", style='DarkFrame.TFrame')
         temp_chart_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
         ttk.Label(temp_chart_frame, text="🔴 Current Temperature (Live Chart)", style='Heading.TLabel', foreground='#e74c3c').pack(anchor=tk.NW, pady=(0, 10))
         self.temperature_chart = TemperatureChart(temp_chart_frame)
 
-        actions_frame = ttk.Frame(self.top_frame, padding="0 15 0 0", style='DarkFrame.TFrame') # Add some top padding
-        actions_frame.pack(fill=tk.X, pady=(10,0)) # Fill horizontally within settings_frame
-        # Initialize ActionsControl, passing initial callbacks (which might be None at this point)
+        actions_frame = ttk.Frame(top_frame, padding="0 15 0 0", style='DarkFrame.TFrame')
+        actions_frame.pack(fill=tk.X, pady=(10,0))
         self.actions_control = ActionsControl(
             actions_frame,
             play_callback=lambda: self.register_event(events.PlayGcode),
@@ -63,23 +80,20 @@ class TkinterUi(AbstractUI):
             open_file_callback=lambda filename: self.register_event(events.NewGcodeFile(filename)),
         )
 
-        # Printer Settings Section
-        settings_frame = ttk.Frame(self.top_frame, padding="15", style='DarkFrame.TFrame')
-        settings_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
-        # ttk.Label(settings_frame, text="Printer Settings", style='Heading.TLabel').pack(anchor=tk.NW, pady=(0, 10))
+        # G-code Execution Section
+        gcode_frame = ttk.Frame(bottom_frame, padding="15", style='DarkFrame.TFrame')
+        self.gcode_viewer = GcodeFrame(gcode_frame)
+        gcode_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+    def _setup_settings_tab(self):
+        settings_frame = ttk.Frame(self.settings_tab, padding="15", style='DarkFrame.TFrame')
+        settings_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        # Pass the slider_callback to HeatingControl
         def update_heating_temp(tool, level):
-            # update horizontal line in graph
             self.temperature_chart.set_target_temperature(tool, level)
-            # register event for controller
             self.register_event(events.UpdateTargetTemperature(tool, level))
         self.heating_control = HeatingControl(settings_frame, on_update=update_heating_temp)
 
-        # G-code Execution Section
-        self.gcode_frame = ttk.Frame(bottom_frame, padding="15", style='DarkFrame.TFrame')
-        self.gcode_viewer = GcodeFrame(self.gcode_frame)
-        self.gcode_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
     def run(self):
         """TODO"""
@@ -97,7 +111,7 @@ class TkinterUi(AbstractUI):
             case events.ArduinoConnected():
                 self.banner_label.pack_forget()
             case events.ArduinoDisconnected():
-                self.banner_label.pack(fill=tk.X, side=tk.TOP, before=self.top_frame)
+                self.banner_label.pack(fill=tk.X, side=tk.TOP, before=self.notebook)
                 
             case _:
                 raise NotImplementedError("Event not caught: " + str(event))
