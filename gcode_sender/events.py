@@ -55,3 +55,16 @@ class ArduinoConnected(Event):
 @dataclass(frozen=True)
 class ArduinoDisconnected(Event):
     ...
+
+@dataclass(frozen=True)
+class GrblSettingsReceived(Event):
+    settings: list
+
+@dataclass(frozen=True)
+class RequestGrblSettings(Event):
+    ...
+
+@dataclass(frozen=True)
+class SendGrblSetting(Event):
+    setting: str
+    value: str

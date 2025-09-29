@@ -196,6 +196,11 @@ class Controller:
                     self.wait_for_ok()
                     self.write("G90")  # absolute coords
                     self.wait_for_ok()
+                case events.RequestGrblSettings:
+                    self.get_grbl_settings()
+                case events.SendGrblSetting(setting=setting, value=value):
+                    self.write(f"{setting}={value}")
+                    self.wait_for_ok()
                 case _:
                     raise NotImplementedError("Event not caught: " + str(event))
         except (SerialException, RuntimeError):
@@ -225,3 +230,29 @@ class Controller:
     def set_gcode_file(self, filename: str):
         self.gcode_handler = GcodeHandler(filename)
         self.register_event(events.NewGcodeFileHandler(self.gcode_handler))
+
+    def get_grbl_settings(self):
+        self.write("$")
+        settings = []
+        t_0 = time.time()
+        while True:
+            if time.time() - t_0 > Controller.SERIAL_TIMEOUT:
+                raise RuntimeError("Timeout")
+            line = self.readline()
+            if "ok" in line:
+                break
+            if line.startswith("$"):
+                parts = line.split("=")
+                if len(parts) == 2:
+                    setting = parts[0]
+                    value_part = parts[1]
+                    value = value_part.split(" ")[0]
+                    description = value_part[len(value)+1:].strip()
+                    if description.startswith("("):
+                        description = description[1:]
+                    if description.endswith(")"):
+                        description = description[:-1]
+                    
+                    settings.append({"setting": setting, "value": value, "description": description})
+        
+        self.register_event(events.GrblSettingsReceived(settings))

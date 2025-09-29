@@ -4,6 +4,7 @@ from .monitor.temperature_chart import TemperatureChart
 from .monitor.gcode import GcodeFrame
 from .monitor.actions_control import ActionsControl
 from .settings.heating_control import HeatingControl
+from .settings.grbl_settings import GrblSettings
 import events
 
 import tkinter as tk
@@ -48,6 +49,8 @@ class TkinterUi(AbstractUI):
 
         self.notebook.add(self.monitor_tab, text='Monitor')
         self.notebook.add(self.settings_tab, text='Settings')
+
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
         # --- Monitor Tab ---
         self._setup_monitor_tab()
@@ -94,6 +97,15 @@ class TkinterUi(AbstractUI):
             self.register_event(events.UpdateTargetTemperature(tool, level))
         self.heating_control = HeatingControl(settings_frame, on_update=update_heating_temp)
 
+        separator = ttk.Separator(settings_frame, orient='horizontal')
+        separator.pack(fill=tk.X, pady=10)
+
+        self.grbl_settings = GrblSettings(
+            settings_frame,
+            send_callback=lambda setting, value: self.register_event(events.SendGrblSetting(setting, value))
+        )
+        self.grbl_settings.pack(fill=tk.BOTH, expand=True)
+
 
     def run(self):
         """TODO"""
@@ -113,6 +125,9 @@ class TkinterUi(AbstractUI):
             case events.ArduinoDisconnected():
                 self.banner_label.pack(fill=tk.X, side=tk.TOP, before=self.notebook)
                 
+            case events.GrblSettingsReceived(settings=settings):
+                self.grbl_settings.set_settings(settings)
+
             case _:
                 raise NotImplementedError("Event not caught: " + str(event))
 
@@ -152,3 +167,8 @@ class TkinterUi(AbstractUI):
         self.root.destroy()
         if self._update_job_id:
             self.root.after_cancel(self._update_job_id)
+
+    def _on_tab_changed(self, event):
+        selected_tab = self.notebook.index(self.notebook.select())
+        if selected_tab == 1:  # Settings tab
+            self.register_event(events.RequestGrblSettings())
