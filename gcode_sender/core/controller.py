@@ -4,6 +4,8 @@ from .filehandler import GcodeHandler
 import events
 from logger import NozzleTemperatureWarning
 from serial.serialutil import SerialException
+import json
+import os
 
 class Controller:
     MAX_BUFFER_SIZE = 20
@@ -69,6 +71,7 @@ class Controller:
             self.is_connected = True
             self.serialBridge.is_connected = True
             self.register_event(events.ArduinoConnected())
+            self.send_settings_from_file()
         except (RuntimeError, SerialException):
             self.is_connected = False
             self.serialBridge.is_connected = False
@@ -256,3 +259,23 @@ class Controller:
                     settings.append({"setting": setting, "value": value, "description": description})
         
         self.register_event(events.GrblSettingsReceived(settings))
+
+    def send_settings_from_file(self):
+        try:
+            controller_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.join(controller_dir, '..', '..')
+            settings_file_path = os.path.join(project_root, 'firmware.settings')
+
+            with open(settings_file_path, "r") as f:
+                data = json.load(f)
+                for setting in data.get("settings", []):
+                    key = setting.get("key")
+                    value = setting.get("value")
+                    if key and value:
+                        command = f"{key}={value}"
+                        self.write(command)
+                        self.wait_for_ok()
+        except FileNotFoundError:
+            print(f"firmware.settings not found at {settings_file_path}")
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON from firmware.settings.")

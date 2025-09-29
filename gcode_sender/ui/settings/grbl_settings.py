@@ -13,14 +13,8 @@ class GrblSettings(ttk.Frame):
         button_frame = ttk.Frame(self)
         button_frame.pack(fill=tk.X, pady=10)
 
-        self.load_button = ttk.Button(button_frame, text="Load from File", command=self.load_settings)
-        self.load_button.pack(side=tk.LEFT, padx=5)
-
-        self.save_button = ttk.Button(button_frame, text="Save to File", command=self.save_settings)
-        self.save_button.pack(side=tk.LEFT, padx=5)
-
-        self.send_button = ttk.Button(button_frame, text="Send to Printer", command=self.send_settings)
-        self.send_button.pack(side=tk.LEFT, padx=5)
+        self.save_and_send_button = ttk.Button(button_frame, text="Save and Send", command=self.send_settings)
+        self.save_and_send_button.pack(side=tk.LEFT, padx=5)
 
         # Treeview for settings
         self.tree = ttk.Treeview(self, columns=("setting", "value", "description"), show="headings")
@@ -29,45 +23,16 @@ class GrblSettings(ttk.Frame):
         self.tree.heading("description", text="Description")
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-    def load_settings(self):
-        filepath = filedialog.askopenfilename(
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-        )
-        if not filepath:
-            return
 
-        with open(filepath, "r") as f:
-            lines = f.readlines()
 
-        # Clear existing items
-        for i in self.tree.get_children():
-            self.tree.delete(i)
-
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            
-            parts = line.split("=")
-            if len(parts) == 2:
-                setting = parts[0]
-                value = parts[1]
-                self.tree.insert("", "end", values=(setting, value, ""))
-
-    def save_settings(self):
-        filepath = filedialog.asksaveasfilename(
-            defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
-        )
-        if not filepath:
-            return
-
-        with open(filepath, "w") as f:
+    def send_settings(self):
+        # Save to file
+        with open("firmware.settings", "w") as f:
             for child in self.tree.get_children():
                 item = self.tree.item(child)
                 f.write(f"{item['values'][0]}={item['values'][1]}\n")
 
-    def send_settings(self):
+        # Send to printer
         if not self.send_callback:
             return
 
